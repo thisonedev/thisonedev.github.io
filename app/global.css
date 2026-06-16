@@ -1,0 +1,57 @@
+@import 'tailwindcss';
+@import 'fumadocs-ui/css/neutral.css';
+@import 'fumadocs-ui/css/preset.css';
+@import 'fumadocs-openapi/css/preset.css';
+
+@theme {
+  --color-fd-background:           hsl(0, 0%, 100%);
+  --color-fd-foreground:           hsl(222, 47%, 11%);
+  --color-fd-muted:                hsl(210, 40%, 96%);
+  --color-fd-muted-foreground:     hsl(215, 16%, 47%);
+  --color-fd-border:               hsl(220, 13%, 91%);
+  --color-fd-card:                 hsl(0, 0%, 100%);
+  --color-fd-card-foreground:      hsl(222, 47%, 11%);
+  --color-fd-primary:              hsl(162, 91%, 30%);
+  --color-fd-primary-foreground:   hsl(0, 0%, 100%);
+  --color-fd-secondary:            hsl(210, 40%, 96%);
+  --color-fd-secondary-foreground: hsl(222, 47%, 11%);
+  --color-fd-accent:               hsl(210, 40%, 96%);
+  --color-fd-accent-foreground:    hsl(222, 47%, 11%);
+  --color-fd-popover:              hsl(0, 0%, 100%);
+  --color-fd-popover-foreground:   hsl(222, 47%, 11%);
+  --color-fd-ring:                 hsl(162, 91%, 30%);
+}
+
+:root {
+  --fd-layout-width: 1280px;
+  --fd-sidebar-width: 260px;
+  --fd-toc-width: 224px;
+}
+
+.dark {
+  --color-fd-background:           hsl(222, 47%, 7%);
+  --color-fd-foreground:           hsl(213, 31%, 91%);
+  --color-fd-muted:                hsl(223, 47%, 11%);
+  --color-fd-muted-foreground:     hsl(215, 20%, 65%);
+  --color-fd-border:               hsl(216, 34%, 17%);
+  --color-fd-card:                 hsl(222, 47%, 9%);
+  --color-fd-card-foreground:      hsl(213, 31%, 91%);
+  --color-fd-primary:              hsl(162, 91%, 40%);
+  --color-fd-primary-foreground:   hsl(0, 0%, 100%);
+  --color-fd-secondary:            hsl(223, 47%, 13%);
+  --color-fd-secondary-foreground: hsl(213, 31%, 91%);
+  --color-fd-accent:               hsl(216, 34%, 17%);
+  --color-fd-accent-foreground:    hsl(213, 31%, 91%);
+  --color-fd-popover:              hsl(222, 47%, 9%);
+  --color-fd-popover-foreground:   hsl(213, 31%, 91%);
+  --color-fd-ring:                 hsl(162, 91%, 40%);
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#nd-page .prose a[data-card] {
+  margin-bottom: 10px;
+}

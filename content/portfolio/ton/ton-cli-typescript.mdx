@@ -1,0 +1,412 @@
+---
+title: TON CLI Typescript
+description: Unofficial TypeScript CLI that demonstrates key TON use cases, including wallet creation, balance tracking, asset transfers, and more
+---
+
+[TON CLI Typescript](https://github.com/thisonedev/vault/tree/master/ton-cli-typescript) is an unofficial TypeScript CLI that demonstrates key TON use cases, including wallet creation, balance tracking, asset transfers, and more.
+
+## Prerequisites
+
+- Node.js version 22 or later
+
+## Setup
+
+### 1. Clone the repository
+
+```
+https://github.com/thisonedev/vault.git
+```
+
+### 2. Enter ton-cli-typescript directory
+
+```
+cd ton-cli-typescript
+```
+
+### 3. Install dependencies
+
+```
+npm install
+```
+
+### 4. Link CLI globally
+
+```
+npm link
+```
+
+### 5. Provide environment variables
+
+This project uses the [@chainlink/env-enc](https://www.npmjs.com/package/@chainlink/env-enc) package to encrypt `.env` variables.
+
+First, set a password for encrypting and decrypting the environment variable file:
+
+```bash
+npx env-enc set-pw
+```
+
+> Note: you'll need to set a password for each terminal session, but this will not affect or remove your existing variables.
+
+Next, set the required environment variables:
+
+```
+TESTNET_API_KEY=<TESTNET_KEY>
+MAINNET_API_KEY=<MAINNET_KEY>
+WALLET_MNEMONIC=<WALLET_MNEMONIC>
+TONAPI_KEY=<TONAPI_KEY>
+```
+
+| Variable | Required | Description |
+|---|---|---|
+| `TESTNET_API_KEY` | Yes | Toncenter testnet API key. [Register here](https://testnet.toncenter.com/) |
+| `MAINNET_API_KEY` | Yes | Toncenter mainnet API key. [Register here](https://toncenter.com/) |
+| `WALLET_MNEMONIC` | No | 24-word wallet mnemonic. Used as default for commands that require signing |
+| `TONAPI_KEY` | No | TON API key for enriched data (events, jettons, NFTs). Requests are rate-limited without it |
+
+To set these variables, run:
+
+```bash
+npx env-enc set
+```
+
+The `.env.enc` file will be generated automatically. To validate your inputs:
+
+```bash
+npx env-enc view
+```
+
+---
+
+## Usage
+
+```bash
+ton-cli <command> [args]
+```
+
+---
+
+## Commands
+
+- [create-wallet](#create-wallet)
+- [initialize-wallet](#initialize-wallet)
+- [send-ton](#send-ton)
+- [get-wallet-info](#get-wallet-info)
+- [get-wallet-assets](#get-wallet-assets)
+- [get-transaction](#get-transaction)
+- [get-tx-history](#get-tx-history)
+- [get-jetton-info](#get-jetton-info)
+
+---
+
+## create-wallet
+
+Generates a new TON wallet keypair and mnemonic. Does not deploy anything on-chain.
+
+```bash
+ton-cli create-wallet --network <testnet|mainnet>
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to generate the wallet address for |
+
+After your wallet is created, store the mnemonic in a safe place and add it to `.env.enc` using `npx env-enc set`.
+
+<details>
+<summary>Example output</summary>
+
+```
+Generating new TON wallet on testnet...
+
+=== NEW TON WALLET CREATED ===
+────────────────────────────────────────────────────────────
+Network     : testnet
+Address     : 0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+Bounceable  : kQDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnViS
+Public Key  : 392e498f5864de36c821b8881045bd583d2cb749cf69da2429e1cffa5d738e95
+Private Key : dd812567ea642b7ba7bc438ba136bd3f5f2160965a7df805f87d3d4c13f4eb76392e498f5864de36c821b8881045bd583d2cb749cf69da2429e1cffa5d738e95
+
+Mnemonic :
+hope roof wagon ability sell force cruel valley dizzy spider impulse fame another wheat menu dinner armed because labor mask fly bike mutual book
+
+⚠️  Save your mnemonic — it cannot be recovered!
+Explorer    : https://testnet.tonviewer.com/0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+```
+</details>
+
+---
+
+## initialize-wallet
+
+Initializes the wallet by deploying the wallet smart contract on-chain and making a self-transfer with `stateInit`.
+
+> TON is an account-based blockchain, but unlike Ethereum, accounts do not exist on-chain until a smart contract is deployed to that address.
+
+```bash
+ton-cli initialize-wallet --network <testnet|mainnet> --mnemonic "<mnemonic>"
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to initialize the wallet on |
+| `mnemonic` | `string` | No | `WALLET_MNEMONIC` env var | 24-word wallet mnemonic. Prefer the env var — passing this flag exposes the mnemonic in your shell history |
+
+To fund your testnet wallet before initializing, use one of these faucets:
+- [Test Giver bot](https://t.me/testgiver_ton_bot)
+- [Chainstack faucet](https://faucet.chainstack.com/ton-testnet-faucet)
+
+<details>
+<summary>Example output</summary>
+
+```
+Network     : testnet
+Address     : 0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+Bounceable  : kQDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnViS
+Explorer    : https://testnet.tonviewer.com/0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+
+Balance     : 2.0000 TON
+Initializing...
+Confirming.
+✅ Wallet initialized! Seqno: 1
+```
+</details>
+
+---
+
+## send-ton
+
+Sends TON coins to any address with an optional text comment.
+
+```bash
+ton-cli send-ton --to <address> --amount <ton_amount> --network <testnet|mainnet> --comment <text> --mnemonic "<mnemonic>"
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `to` | `string` | Yes | — | Destination TON address |
+| `amount` | `number` | Yes | — | Amount to send in TON, e.g. `0.5` |
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to broadcast the transaction on |
+| `comment` | `string` | No | — | Optional text memo attached to the transfer |
+| `mnemonic` | `string` | No | `WALLET_MNEMONIC` env var | 24-word wallet mnemonic. ⚠️ Prefer the env var — passing this flag exposes the mnemonic in your shell history |
+
+<details>
+<summary>Example output</summary>
+
+```
+Sending TON on testnet...
+────────────────────────────────────────────────────────────
+From    : 0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+To      : 0QARNjsmX66SBIdYS6_z7tyS1xkam-h1BLr7GtRlO6RkKMF7
+Amount  : 0.0011 TON
+────────────────────────────────────────────────────────────
+
+Waiting for confirmation.
+✅ Sent 0.0011 TON to 0QARNjsmX66SBIdYS6_z7tyS1xkam-h1BLr7GtRlO6RkKMF7
+   Explorer : https://testnet.tonviewer.com/transaction/052700fd67cd972d53b1bf39e4033cae0023241e89a46c248c9564d15c7e806a
+```
+</details>
+
+---
+
+## get-wallet-info
+
+Displays balance, status, and last transaction details for any TON address.
+
+```bash
+ton-cli get-wallet-info --address <address> --network <testnet|mainnet>
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `address` | `string` | Yes | — | TON address to look up |
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to query |
+
+<details>
+<summary>Example output</summary>
+
+```
+Wallet Info
+────────────────────────────────────────────────────────────
+Network     : testnet
+Status      : active
+Balance     : 1.9897 TON
+Address     : 0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+Bounceable  : kQDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnViS
+Last Tx Hash: BScA/WfNly1Tsb855AM8rgAjJB6JpGwkjJVk0Vx+gGo=
+Last Tx Lt  : 54367726000001
+Explorer    : https://testnet.tonviewer.com/0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+────────────────────────────────────────────────────────────
+```
+</details>
+
+---
+
+## get-wallet-assets
+
+Lists all jettons and NFTs held by a TON address.
+
+```bash
+ton-cli get-wallet-assets --address <address> --network <testnet|mainnet> --limit <limit> --jettons-limit <jettons_limit> --nft-limit <nft_limit>
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `address` | `string` | Yes | — | TON address to look up |
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to query |
+| `limit` | `number` | No | `10` | Max results for both jettons and NFTs. Capped at `100` |
+| `jettons-limit` | `number` | No | value of `--limit` | Override max number of jettons to display |
+| `nft-limit` | `number` | No | value of `--limit` | Override max number of NFTs to display |
+
+<details>
+<summary>Example output</summary>
+
+```
+Wallet Assets — UQBmzW4wYlFW0tiBgj5sP1CgSlLdYs-VpjPWM7oPYPYWQBqW
+Network: mainnet
+
+── Jettons ─────────────────────────────────────────────────
+  DONT              12345.00  DONKEY TON
+    Minter  : EQBh0GTe1QrRDfBb3zF_5131ykR64T0y9aIy2LygDt0iWUNx
+    Link    : https://tonviewer.com/EQBh0GTe1QrRDfBb3zF_5131ykR64T0y9aIy2LygDt0iWUNx
+  ATF                  30.00  AI Trading Forex
+    Minter  : EQANcW45W0Tp91bzvHayaPO6-6hf1Lm4XlWZ4rN6L5ofPWdb
+    Link    : https://tonviewer.com/EQANcW45W0Tp91bzvHayaPO6-6hf1Lm4XlWZ4rN6L5ofPWdb
+  ... and 107 more
+
+── NFTs ────────────────────────────────────────────────────
+  BTC Monkey #0095
+    Collection : Mining $VWS
+    Address    : EQClp9ttASdPf_Sg0VruuEVLZXJTkwbmcUDxZOyiEa8Ezz9a
+  ... and 88 more
+────────────────────────────────────────────────────────────
+```
+</details>
+
+---
+
+## get-transaction
+
+Fetches full details for a single transaction by its hash, including inbound and outbound messages.
+
+```bash
+ton-cli get-transaction --hash <hash> --network <testnet|mainnet>
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `hash` | `string` | Yes | — | Full transaction hash |
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to query |
+
+<details>
+<summary>Example output</summary>
+
+```
+Transaction 052700fd67cd972d53b1bf39e4033cae0023241e89a46c248c9564d15c7e806a
+────────────────────────────────────────────────────────────
+   Time    : 2026-03-10 04:56:02
+   Status  : ✅ Success
+   Account : 0QDklMt_wtJATm1lc5e2ro0vFalpcodx_0NCKcIovjFsnQVX
+   Fees    : 0.002808 TON
+   ← In    :   from external  op=1936287598
+     Body   : {"wallet_id":2147483645,"valid_until":1773118622,"seqno":1,...}
+   → Out   : -0.0011 TON  to 0QARNjsmX66SBIdYS6_z7tyS1xkam-h1BLr7GtRlO6RkKMF7
+────────────────────────────────────────────────────────────
+   Link    : https://testnet.tonviewer.com/transaction/052700fd67cd972d53b1bf39e4033cae0023241e89a46c248c9564d15c7e806a
+```
+</details>
+
+---
+
+## get-tx-history
+
+Shows recent transactions for any TON address, with action-level breakdown for each event.
+
+```bash
+ton-cli get-tx-history --address <address> --limit <limit> --network <testnet|mainnet>
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `address` | `string` | Yes | — | TON address to look up |
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to query |
+| `limit` | `number` | No | `10` | Number of transactions to fetch. Capped at `100` |
+
+<details>
+<summary>Example output</summary>
+
+```
+Transactions for 0QARNjsmX66SBIdYS6_z7tyS1xkam-h1BLr7GtRlO6RkKMF7
+Network: testnet | Showing last 5
+
+────────────────────────────────────────────────────────────
+🕐 2026-03-08 02:31:59
+   Status  : ✅ Success
+   Event   : d1f62514b12fd5b88e537e60b2089a2c9af63a9b1a86ce421eda2f675a46bba8
+   ✅ TON Transfer    4.4000 TON
+      From : 0QAnWvFxPJpl4k_4VSmsGYCTZqP1IcQC547UYsNorrq8OToZ
+      To   : 0QARNjsmX66SBIdYS6_z7tyS1xkam-h1BLr7GtRlO6RkKMF7
+   Net     : 0.000310278 TON spent
+   Link    : https://testnet.tonviewer.com/transaction/d1f62514b12fd5b88e537e60b2089a2c9af63a9b1a86ce421eda2f675a46bba8
+────────────────────────────────────────────────────────────
+🕐 2026-03-07 14:26:25
+   Status  : ❌ Failed
+   Event   : 52172c31c32c5a0b1b87542b549f30894993fc47ed9328c8e9a87e48dcfc5edb
+   ❌ Failed Contract Call    op=0x00000003  0.0500 TON
+      From : 0QARNjsmX66SBIdYS6_z7tyS1xkam-h1BLr7GtRlO6RkKMF7
+      To   : 0QDIns5_fS6-WFWL4G5N_7UX8bI1e_hWcA3pSDjhuUYYHPP-
+   Net     : 0.052636402 TON spent
+   Link    : https://testnet.tonviewer.com/transaction/52172c31c32c5a0b1b87542b549f30894993fc47ed9328c8e9a87e48dcfc5edb
+────────────────────────────────────────────────────────────
+```
+</details>
+
+---
+
+## get-jetton-info
+
+Returns jetton metadata and supply, or all jettons owned by a given address.
+
+```bash
+ton-cli get-jetton-info --address <address> --network <testnet|mainnet>
+```
+
+| Flag | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `address` | `string` | Yes | — | Jetton minter address for token info, or any wallet address to list owned jettons |
+| `network` | `testnet` \| `mainnet` | No | `testnet` | Network to query |
+
+<details>
+<summary>Example output — jetton info by minter address</summary>
+
+```
+Jetton Info
+────────────────────────────────────────────────────────────
+   Name      : Notcoin
+   Symbol    : NOT
+   Decimals  : 9
+   Supply    : 102,452,755,868.521 NOT
+   Mintable  : Yes
+   Admin     : renounced
+   Minter    : EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT
+   Image     : https://cdn.joincommunity.xyz/clicker/not_logo.png
+   Holders   : 2,846,667
+────────────────────────────────────────────────────────────
+   Explorer  : https://tonviewer.com/EQAvlWFDxGF2lXm67y4yzC17wYKD9A0guwPkMs1gOsM__NOT
+```
+</details>
+
+<details>
+<summary>Example output — jettons owned by wallet address</summary>
+
+```
+Jettons owned by UQBmzW4wYlFW0tiBgj5sP1CgSlLdYs-VpjPWM7oPYPYWQBqW
+────────────────────────────────────────────────────────────
+   DONT              12,345  DONKEY TON
+              Minter : EQBh0GTe1QrRDfBb3zF_5131ykR64T0y9aIy2LygDt0iWUNx
+              Link   : https://tonviewer.com/EQBh0GTe1QrRDfBb3zF_5131ykR64T0y9aIy2LygDt0iWUNx
+   ATF                   30  AI Trading Forex
+              Minter : EQANcW45W0Tp91bzvHayaPO6-6hf1Lm4XlWZ4rN6L5ofPWdb
+              Link   : https://tonviewer.com/EQANcW45W0Tp91bzvHayaPO6-6hf1Lm4XlWZ4rN6L5ofPWdb
+────────────────────────────────────────────────────────────
+```
+</details>

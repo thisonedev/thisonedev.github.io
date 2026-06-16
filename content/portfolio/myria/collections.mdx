@@ -1,0 +1,394 @@
+---
+title: Collections SDK Reference
+description: Collections SDK Reference
+---
+
+This document is a reference to the **Collections module** of the Myria Core SDK. The module contains information about Myria collections.
+
+### Interfaces
+
+#### **CreateCollectionParams**
+Data structure passed to `createCollection()` method, which contains required data to create a new collection.
+
+**Attributes**:
+*   **name** - collection name
+*   **collectionImageUrl** - url for main collection image
+*   **description** - collection description
+*   **iconUrl** - url for collection icon
+*   **contractAddress** - contract address used to withdraw assets to the Ethereum network
+*   **ownerPublicKey** - public key of the collection owner
+*   **metadataApiUrl** - api url that will store collection metadata
+*   **starkKey** - Stark Key, has to start with 0x
+*   **projectId** - project id of the collection
+
+```typescript
+interface CreateCollectionParams {   
+  name: string;   
+  collectionImageUrl?: string;   
+  description?: string;   
+  iconUrl?: string;   
+  contractAddress: string;   
+  ownerPublicKey: string;   
+  metadataApiUrl: string;   
+  starkKey: string;   
+  projectId: number; 
+}
+```
+
+#### **CreateCollectionResponse**
+Data structure returned by the `createCollection()` method.
+
+**Attributes**:
+*   **id** - collection id
+*   **createdAt** - when the collection was created
+*   **updatedAt** - when the collection was updated last time
+*   **name** - collection name
+*   **collectionImageUrl** - url for main collection image
+*   **description** - collection description
+*   **iconUrl** - url for collection icon
+*   **contractAddress** - contract address used to withdraw assets to the Ethereum network
+*   **ownerPublicKey** - public key of the collection owner
+*   **metadataApiUrl** - api url that will store collection metadata
+*   **starkKey** - Stark Key, has to start with 0x
+*   **pubicId** - public id of the collection
+
+```typescript
+interface CreateCollectionResponse {   
+  id: number;   
+  createdAt: string;   
+  updatedAt: string;   
+  name: string;   
+  collectionImageUrl: string;   
+  description: string;   
+  iconUrl: string;   
+  contractAddress: string;   
+  ownerPublicKey: string;   
+  metadataApiUrl: string;   
+  starkKey: string;   
+  pubicId: string; 
+}
+```
+
+#### **GetCollectionParams**
+Data structure passed to `getCollectionList()` method, which contains required parameters for querying collections.
+
+**Attributes**:
+*   **limit** - the max number of collections to return per response
+*   **page** - the page number of returned collections based on the defined limit
+*   **isHot** - whether the collection should be included in the hot section on the marketplace
+
+```typescript
+interface GetCollectionParams {   
+  limit?: number;   
+  page?: number;   
+  isHot?: boolean; 
+}
+```
+
+#### **CollectionDetailsResponse**
+Data structure that contains collection details response.
+
+```typescript
+interface CollectionDetailsResponse {}
+```
+
+#### **CollectionDetailsResponseData**
+Data structure that contains collection details response data.
+
+**Attributes**:
+*   **id** - collection id
+*   **createdAt** - when the collection was created
+*   **updatedAt** - when the collection was updated last time
+*   **name** - collection name
+*   **collectionImageUrl** - url for main collection image
+*   **description** - collection description
+*   **iconUrl** - url for collection icon
+*   **contractAddress** - contract address used to withdraw assets to the Ethereum network
+*   **ownerPublicKey** - public key (wallet address) of the collection owner
+*   **metadataApiUrl** - api url that will store collection metadata
+*   **starkKey** - Stark Key, has to start with 0x
+*   **publicId** - public id of the collection
+*   **metadataSchema** - an array of MetaDataShema
+*   **project** - ProjectResponseData object
+
+```typescript
+interface CollectionDetailsResponseData {   
+  id: number;   
+  createdAt: string;   
+  updatedAt: string;   
+  name: string;   
+  collectionImageUrl: string;   
+  description: string;   
+  iconUrl: string;   
+  contractAddress: string;   
+  ownerPublicKey: string;   
+  metadataApiUrl: string;   
+  starkKey: string;   
+  publicId: string;   
+  metadataSchema: any[];   
+  project: ProjectResponseData; 
+}
+```
+
+#### **CollectionListResponse**
+Data structure returned by the `getCollectionList()` method.
+
+**Attributes**:
+*   **id** - collection id
+*   **createdAt** - when the collection was created
+*   **updatedAt** - when the collection was updated last time
+*   **name** - collection name
+*   **collectionImageUrl** - url for main collection image
+*   **description** - collection description
+*   **iconUrl** - url for collection icon
+*   **contractAddress** - contract address used to withdraw assets to the Ethereum network
+*   **ownerPublicKey** - public key of the collection owner
+*   **metadataApiUrl** - api url that will store collection metadata
+*   **starkKey** - Stark Key, has to start with 0x
+*   **publicId** - public id of the collection
+*   **isHot** - whether the collection should be included in the hot section on the marketplace
+*   **metadataSchema** - an array of MetaDataShema
+*   **project** - ProjectResponseData object
+
+```typescript
+interface CollectionListResponse {   
+  id: number;   
+  createdAt: string;   
+  updatedAt: string;   
+  name: string;   
+  collectionImageUrl: string;   
+  description: string;   
+  iconUrl: null;   
+  contractAddress: string;   
+  ownerPublicKey: string;   
+  metadataApiUrl: string;   
+  starkKey: string;   
+  publicId: string;   
+  isHot: boolean;   
+  metadataSchema: MetaDataSchema[];   
+  project: ProjectResponseData; 
+}
+```
+
+#### **MetaDataSchema**
+Data structure that contains metadata schema each item in the collection will follow.
+
+**Attributes**:
+*   **god**: string
+*   **name**: string
+*   **type**: number
+*   **attack**: number
+*   **rarity**: number
+*   **element**: string
+*   **product**: number
+*   **imageUrl**: string
+*   **collectable**: true
+*   **animationUrl**: string
+*   **animationUrlMimeType**: string
+
+```typescript
+interface MetaDataSchema {   
+  god: string;   
+  name: string;   
+  type: number;   
+  attack: number;   
+  rarity: number;   
+  element: string;   
+  product: number;   
+  imageUrl: string;   
+  collectable: true;   
+  animationUrl: string;   
+  animationUrlMimeType: string; 
+}
+```
+
+#### **CollectionMetadataSchemaParams**
+Data structure passed to `createCollectionMetadataByAddress()` method.
+
+**Attributes**:
+*   **name** - metadata schema field name
+*   **type** - metadata schema field type
+*   **filterable** - whether a field should be filterable in the marketplace
+
+```typescript
+interface CollectionMetadataSchemaParams {     
+  name: string;     
+  type?: string;     
+  filterable?: boolean; 
+}
+```
+
+#### **CollectionMetadataResponse**
+Data structure returned by the `getCollectionMetadataByAddress()` method.
+
+**Attributes**:
+*   **name** - metadata schema field name
+*   **type** - metadata schema field type
+*   **filterable** - whether a field should be filterable in the marketplace
+
+```typescript
+interface CollectionMetadataResponse {     
+  name: string;     
+  type?: string;     
+  filterable?: boolean; 
+}
+```
+
+#### **CreateCollectionMetadataResponseType**
+Data structure that contains an array of metadata schema fields.
+
+**Attributes**:
+*   **metadata** - metadata schema fields
+
+```typescript
+interface CreateCollectionMetadataResponseType {     
+  metadata: any[]; 
+}
+```
+
+---
+
+### Methods
+
+#### **createCollection()**
+Creates a collection.
+
+**Parameters**:
+*   CreateCollection object
+
+**Returns**:
+*   Returns a collection object.
+
+**Example**
+```typescript
+createCollection(payload: CreateCollectionParams): Promise<CreateCollectionResponse | undefined>;
+
+import { CollectionManager, CreateCollectionParams, CreateCollectionResponse, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const collectionManager: CollectionManager = new CollectionManager(env);
+  const params: CreateCollectionParams = {     
+    name: "COLLECTION_NAME",     
+    description: "COLLECTION_DESCRIPTION",     
+    contractAddress: "CONTRACT_ADDRESS",     
+    metadataApiUrl: "METADATA_API_URL",     
+    ownerPublicKey: "OWNER_PUBLIC_KEY",     
+    projectId: "PROJECT_ID",     
+    starkKey: "STARK_KEY",   
+  };
+  const newCollectionResponse: CreateCollectionResponse | undefined =      
+    await collectionManager.createCollection(params); 
+})();
+```
+
+**Response**:
+*   CreateCollectionResponse
+
+#### **getCollectionList()**
+Returns a list of collections.
+
+**Parameters**:
+*   GetCollectionParams object
+
+**Returns**:
+*   Returns an object with response call status and the data object that contains a list of collections.
+
+**Example**
+```typescript
+getCollectionList(params?: GetCollectionParams): Promise<APIResponseType<CommonPaginateDataTypes<CollectionListResponse[]>> | undefined>;
+
+import { CollectionManager, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const collectionManager: CollectionManager = new CollectionManager(env);
+  const collectionListResponse = await collectionManager.getCollectionList(); 
+})();
+```
+
+**Response**:
+*   CreateCollectionResponse
+
+#### **getCollectionById()**
+Returns a collection by its id.
+
+**Parameters**:
+*   **id** - collection id
+
+**Returns**:
+*   Returns an object with response call status and the data object that contains information about the project.
+
+**Example**
+```typescript
+getCollectionById(id: number): Promise<CollectionDetailsResponse | undefined>;
+
+import { CollectionManager, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const collectionManager: CollectionManager = new CollectionManager(env);
+  const collectionResponse =      
+    await collectionManager.getCollectionById(COLLECTION_ID); 
+})();
+```
+
+**Response**:
+*   CollectionDetailsResponse
+
+#### **getCollectionMetadataByAddress()**
+Returns metadata of the collection.
+
+**Parameters**:
+*   **contractAddress** - contract address used to withdraw assets to the Ethereum network
+
+**Returns**:
+*   Returns an object with response call status and the data object that contains information about the collection's metadata.
+
+**Example**
+```typescript
+getCollectionMetadataByAddress(contractAddress: string): Promise<APIResponseType<CollectionMetadataResponse> | undefined>;
+
+import { CollectionManager, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const collectionManager: CollectionManager = new CollectionManager(env);
+  const collectionResponse =      
+    await collectionManager.getCollectionMetadataByAddress("CONTRACT_ADDRESS"); 
+})();
+```
+
+**Response**:
+*   CollectionMetadataResponse
+
+#### **getCollectionByPublicId()**
+Returns a collection by its public id.
+
+**Parameters**:
+*   **publicId** - public id of the collection
+
+**Returns**:
+*   Returns an object with response call status and the data object that contains information about the collection.
+
+**Example**
+```typescript
+getCollectionByPublicId(publicId: string): Promise<APIResponseType<CollectionDetailsResponseData> | undefined>;
+
+import { CollectionManager, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const collectionManager: CollectionManager = new CollectionManager(env);
+  const collectionResponse =      
+    await collectionManager.getCollectionByPublicId(COLLECTION_PUBLIC_ID); 
+})();
+```
+
+**Response**:
+*   CollectionDetailsResponseData

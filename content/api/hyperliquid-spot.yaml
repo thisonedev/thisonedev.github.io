@@ -1,0 +1,746 @@
+openapi: 3.1.0
+  
+info:
+  title: Hyperliquid Spot Info API Reference
+  version: "1.0.0"
+  description: |
+    Spot-specific endpoints on the Hyperliquid POST /info API.
+    All operations share the same URL and HTTP method. Path fragments
+    (/info#operationName) give each action a unique OpenAPI key; the fragment
+    is ignored at runtime.
+ 
+servers:
+  - url: https://api.hyperliquid.xyz
+    description: Mainnet
+  - url: https://api.hyperliquid-testnet.xyz
+    description: Testnet
+  
+tags:
+  - name: Market Data
+    description: Read-only queries for spot market metadata, asset contexts, token details, and outcomes.
+  - name: Account
+    description: Endpoints for querying a user's spot balances and positions.
+  - name: Deployments
+    description: Endpoints for spot token and pair deployment auctions.
+  
+paths:
+  
+  /info#retrieveSpotMetadata:
+    post:
+      operationId: retrieveSpotMetadata
+      summary: Retrieve spot metadata
+      tags:
+        - Market Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - spotMeta
+                  description: '"spotMeta"'
+            example:
+              type: "spotMeta"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotMetaResponse"
+              example:
+                tokens:
+                  - name: "USDC"
+                    szDecimals: 8
+                    weiDecimals: 8
+                    index: 0
+                    tokenId: "0x6d1e7cde53ba9467b783cb7c530ce054"
+                    isCanonical: true
+                    evmContract: null
+                    fullName: null
+                  - name: "PURR"
+                    szDecimals: 0
+                    weiDecimals: 5
+                    index: 1
+                    tokenId: "0xc1fb593aeffbeb02f85e0308e9956a90"
+                    isCanonical: true
+                    evmContract: null
+                    fullName: null
+                  - name: "HFUN"
+                    szDecimals: 2
+                    weiDecimals: 8
+                    index: 2
+                    tokenId: "0xbaf265ef389da684513d98d68edf4eae"
+                    isCanonical: false
+                    evmContract: null
+                    fullName: null
+                universe:
+                  - name: "PURR/USDC"
+                    tokens: [1, 0]
+                    index: 0
+                    isCanonical: true
+                  - tokens: [2, 0]
+                    name: "@1"
+                    index: 1
+                    isCanonical: false
+  
+  /info#retrieveSpotAssetContexts:
+    post:
+      operationId: retrieveSpotAssetContexts
+      summary: Retrieve spot asset contexts
+      tags:
+        - Market Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - spotMetaAndAssetCtxs
+                  description: '"spotMetaAndAssetCtxs"'
+            example:
+              type: "spotMetaAndAssetCtxs"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotMetaAndAssetCtxsResponse"
+              example:
+                - tokens:
+                    - name: "USDC"
+                      szDecimals: 8
+                      weiDecimals: 8
+                      index: 0
+                      tokenId: "0x6d1e7cde53ba9467b783cb7c530ce054"
+                      isCanonical: true
+                      evmContract: null
+                      fullName: null
+                    - name: "PURR"
+                      szDecimals: 0
+                      weiDecimals: 5
+                      index: 1
+                      tokenId: "0xc1fb593aeffbeb02f85e0308e9956a90"
+                      isCanonical: true
+                      evmContract: null
+                      fullName: null
+                  universe:
+                    - name: "PURR/USDC"
+                      tokens: [1, 0]
+                      index: 0
+                      isCanonical: true
+                - [{dayNtlVlm: "8906.0", markPx: "0.14", midPx: "0.209265", prevDayPx: "0.20432"}]
+  
+  /info#retrieveUserTokenBalances:
+    post:
+      operationId: retrieveUserTokenBalances
+      summary: Retrieve a user's token balances
+      tags:
+        - Account
+      description: |
+        See a user's token balances.
+ 
+        Under unified account or portfolio margin, this is the source of truth for trading account balance across spot and perps.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - spotClearinghouseState
+                  description: '"spotClearinghouseState"'
+                user:
+                  type: string
+                  description: Onchain address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000.
+            example:
+              type: "spotClearinghouseState"
+              user: "0x0000000000000000000000000000000000000000"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotClearinghouseStateResponse"
+              example:
+                balances:
+                  - coin: "USDC"
+                    token: 0
+                    hold: "0.0"
+                    total: "14.625485"
+                    entryNtl: "0.0"
+                  - coin: "PURR"
+                    token: 1
+                    hold: "0"
+                    total: "2000"
+                    entryNtl: "1234.56"
+  
+  /info#retrieveSpotDeployAuction:
+    post:
+      operationId: retrieveSpotDeployAuction
+      summary: Retrieve information about the Spot Deploy Auction
+      tags:
+        - Deployments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - spotDeployState
+                  description: '"spotDeployState"'
+                user:
+                  type: string
+                  description: Onchain address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000.
+            example:
+              type: "spotDeployState"
+              user: "0x0000000000000000000000000000000000000000"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotDeployStateResponse"
+              example:
+                states:
+                  - token: 150
+                    spec:
+                      name: "HYPE"
+                      szDecimals: 2
+                      weiDecimals: 8
+                    fullName: "Hyperliquid"
+                    spots: [107]
+                    maxSupply: 1000000000
+                    hyperliquidityGenesisBalance: "120000"
+                    totalGenesisBalanceWei: "100000000000000000"
+                    userGenesisBalances: []
+                    existingTokenGenesisBalances: []
+                gasAuction:
+                  startTimeSeconds: 1733929200
+                  durationSeconds: 111600
+                  startGas: "181305.90046"
+                  currentGas: null
+                  endGas: "181291.247358"
+  
+  /info#retrieveSpotPairDeployAuction:
+    post:
+      operationId: retrieveSpotPairDeployAuction
+      summary: Retrieve information about the Spot Pair Deploy Auction
+      tags:
+        - Deployments
+      description: |
+        Note: This returns the status of the Dutch auction for spot pair deployments between existing base and quote tokens. Participation in this auction is permissionless through the same action as the registerSpot phase of base token deployment.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - spotPairDeployAuctionStatus
+                  description: '"spotPairDeployAuctionStatus"'
+            example:
+              type: "spotPairDeployAuctionStatus"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SpotPairDeployAuctionStatusResponse"
+              example:
+                startTimeSeconds: 1755468000
+                durationSeconds: 111600
+                startGas: "500.0"
+                currentGas: "500.0"
+                endGas: null
+  
+  /info#retrieveTokenDetails:
+    post:
+      operationId: retrieveTokenDetails
+      summary: Retrieve information about a token
+      tags:
+        - Market Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - tokenId
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - tokenDetails
+                  description: '"tokenDetails"'
+                tokenId:
+                  type: string
+                  description: Onchain id in 34-character hexadecimal format; e.g. 0x00000000000000000000000000000000.
+            example:
+              type: "tokenDetails"
+              tokenId: "0x00000000000000000000000000000000"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenDetailsResponse"
+              example:
+                name: "TEST"
+                maxSupply: "1852229076.12716007"
+                totalSupply: "851681534.05516005"
+                circulatingSupply: "851681534.05516005"
+                szDecimals: 0
+                weiDecimals: 5
+                midPx: "3.2049"
+                markPx: "3.2025"
+                prevDayPx: "3.2025"
+                genesis:
+                  userBalances:
+                    - ["0x0000000000000000000000000000000000000001", "1000000000.0"]
+                    - ["0xffffffffffffffffffffffffffffffffffffffff", "1000000000.0"]
+                  existingTokenBalances: []
+                deployer: "0x0000000000000000000000000000000000000001"
+                deployGas: "100.0"
+                deployTime: "2024-06-05T10:50:59.434"
+                seededUsdc: "0.0"
+                nonCirculatingUserBalances: []
+                futureEmissions: "0.0"
+  
+  /info#retrieveOutcomeMeta:
+    post:
+      operationId: retrieveOutcomeMeta
+      summary: Retrieve outcome metadata (testnet-only)
+      tags:
+        - Market Data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                    - outcomeMeta
+                  description: '"outcomeMeta"'
+            example:
+              type: "outcomeMeta"
+      responses:
+        "200":
+          description: Successful Response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OutcomeMetaResponse"
+              example:
+                outcomes:
+                  - outcome: 123
+                    name: "Recurring"
+                    description: "class:priceBinary|underlying:HYPE|expiry:20260310-1100|targetPrice:34.5|period:3m"
+                    sideSpecs:
+                      - name: "Yes"
+                      - name: "No"
+  
+components:
+  schemas:
+  
+    SpotToken:
+      type: object
+      description: A single token in the spot token registry.
+      properties:
+        name:
+          type: string
+          description: Token symbol (e.g. USDC, PURR).
+        szDecimals:
+          type: integer
+          description: Number of decimal places for display sizing.
+        weiDecimals:
+          type: integer
+          description: Number of wei-decimal places.
+        index:
+          type: integer
+          description: Numeric index of this token in the tokens array.
+        tokenId:
+          type: string
+          description: 34-character onchain hex identifier for the token.
+        isCanonical:
+          type: boolean
+          description: Whether the token is canonical.
+        evmContract:
+          type:
+            - string
+            - "null"
+          description: EVM contract address, if applicable.
+        fullName:
+          type:
+            - string
+            - "null"
+          description: Full human-readable name of the token.
+  
+    SpotUniverseEntry:
+      type: object
+      description: A single trading pair in the spot universe.
+      properties:
+        name:
+          type: string
+          description: Pair name (e.g. PURR/USDC) or @{index} for non-canonical pairs.
+        tokens:
+          type: array
+          items:
+            type: integer
+          description: Pair of token indices [baseIndex, quoteIndex].
+        index:
+          type: integer
+          description: Numeric index of this pair in the universe array.
+        isCanonical:
+          type: boolean
+          description: Whether the pair is canonical.
+  
+    SpotMetaResponse:
+      type: object
+      description: Response containing spot token metadata and universe.
+      properties:
+        tokens:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpotToken"
+          description: Array of all spot tokens.
+        universe:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpotUniverseEntry"
+          description: Array of all spot trading pairs.
+  
+    SpotAssetCtx:
+      type: object
+      description: Context for a single spot asset including pricing and volume.
+      properties:
+        dayNtlVlm:
+          type: string
+          description: Day notional volume as a decimal string.
+        markPx:
+          type: string
+          description: Mark price as a decimal string.
+        midPx:
+          type: string
+          description: Mid price as a decimal string.
+        prevDayPx:
+          type: string
+          description: Previous day price as a decimal string.
+  
+    SpotMetaAndAssetCtxsResponse:
+      type: array
+      description: |
+        A two-element array. The first element is the spot metadata object (tokens + universe).
+        The second element is an array of per-asset context objects.
+      x-note: |
+        The array is heterogeneous: element 0 is a SpotMetaResponse object,
+        element 1 is an array of SpotAssetCtx objects.
+ 
+    SpotBalance:
+      type: object
+      description: A single token balance entry.
+      properties:
+        coin:
+          type: string
+          description: Token symbol.
+        token:
+          type: integer
+          description: Token index.
+        hold:
+          type: string
+          description: Amount on hold as a decimal string.
+        total:
+          type: string
+          description: Total balance as a decimal string.
+        entryNtl:
+          type: string
+          description: Entry notional value as a decimal string.
+  
+    SpotClearinghouseStateResponse:
+      type: object
+      description: "Response containing a user's spot token balances."
+      properties:
+        balances:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpotBalance"
+          description: Array of token balance entries.
+  
+    SpotDeploySpec:
+      type: object
+      description: Token specification for a deployed or deploying token.
+      properties:
+        name:
+          type: string
+          description: Token symbol.
+        szDecimals:
+          type: integer
+          description: Number of decimal places for display sizing.
+        weiDecimals:
+          type: integer
+          description: Number of wei-decimal places.
+  
+    SpotDeployStateEntry:
+      type: object
+      description: A single entry representing a token deployment state.
+      properties:
+        token:
+          type: integer
+          description: Token index.
+        spec:
+          $ref: "#/components/schemas/SpotDeploySpec"
+        fullName:
+          type: string
+          description: Full human-readable name of the token.
+        spots:
+          type: array
+          items:
+            type: integer
+          description: Array of spot pair indices.
+        maxSupply:
+          type: integer
+          description: Maximum supply of the token.
+        hyperliquidityGenesisBalance:
+          type: string
+          description: Genesis balance for Hyperliquidity as a decimal string.
+        totalGenesisBalanceWei:
+          type: string
+          description: Total genesis balance in wei as a decimal string.
+        userGenesisBalances:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: Array of (address, balance) tuples.
+        existingTokenGenesisBalances:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: Array of (tokenIndex, balance) tuples.
+  
+    GasAuction:
+      type: object
+      description: Details of a gas auction for deployment.
+      properties:
+        startTimeSeconds:
+          type: integer
+          description: Auction start time as a Unix timestamp.
+        durationSeconds:
+          type: integer
+          description: Auction duration in seconds.
+        startGas:
+          type:
+            - string
+            - "null"
+          description: Starting gas price as a decimal string.
+        currentGas:
+          type:
+            - string
+            - "null"
+          description: Current gas price as a decimal string, or null if not started.
+        endGas:
+          type:
+            - string
+            - "null"
+          description: Ending gas price as a decimal string.
+  
+    SpotDeployStateResponse:
+      type: object
+      description: Response containing spot deployment state and gas auction details.
+      properties:
+        states:
+          type: array
+          items:
+            $ref: "#/components/schemas/SpotDeployStateEntry"
+          description: Array of deployment state entries.
+        gasAuction:
+          $ref: "#/components/schemas/GasAuction"
+  
+    SpotPairDeployAuctionStatusResponse:
+      type: object
+      description: Response containing the status of the Dutch auction for spot pair deployments.
+      properties:
+        startTimeSeconds:
+          type: integer
+          description: Auction start time as a Unix timestamp.
+        durationSeconds:
+          type: integer
+          description: Auction duration in seconds.
+        startGas:
+          type:
+            - string
+            - "null"
+          description: Starting gas price as a decimal string.
+        currentGas:
+          type:
+            - string
+            - "null"
+          description: Current gas price as a decimal string.
+        endGas:
+          type:
+            - string
+            - "null"
+          description: Ending gas price as a decimal string.
+  
+    TokenDetailsGenesis:
+      type: object
+      description: Genesis allocation details for a token.
+      properties:
+        userBalances:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: Array of (address, balance) tuples.
+        existingTokenBalances:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: Array of (tokenIndex, balance) tuples.
+  
+    TokenDetailsResponse:
+      type: object
+      description: Detailed information about a specific token.
+      properties:
+        name:
+          type: string
+          description: Token symbol.
+        maxSupply:
+          type: string
+          description: Maximum supply as a decimal string.
+        totalSupply:
+          type: string
+          description: Total supply as a decimal string.
+        circulatingSupply:
+          type: string
+          description: Circulating supply as a decimal string.
+        szDecimals:
+          type: integer
+          description: Number of decimal places for display sizing.
+        weiDecimals:
+          type: integer
+          description: Number of wei-decimal places.
+        midPx:
+          type:
+            - string
+            - "null"
+          description: Mid price as a decimal string.
+        markPx:
+          type:
+            - string
+            - "null"
+          description: Mark price as a decimal string.
+        prevDayPx:
+          type:
+            - string
+            - "null"
+          description: Previous day price as a decimal string.
+        genesis:
+          $ref: "#/components/schemas/TokenDetailsGenesis"
+        deployer:
+          type: string
+          description: Deployer address in 42-character hexadecimal format.
+        deployGas:
+          type: string
+          description: Gas used for deployment as a decimal string.
+        deployTime:
+          type: string
+          description: ISO 8601 timestamp of deployment.
+        seededUsdc:
+          type: string
+          description: Amount of USDC seeded as a decimal string.
+        nonCirculatingUserBalances:
+          type: array
+          items:
+            type: array
+            items:
+              type: string
+          description: Array of (address, balance) tuples for non-circulating balances.
+        futureEmissions:
+          type: string
+          description: Future emissions as a decimal string.
+  
+    OutcomeSideSpec:
+      type: object
+      description: A side specification for an outcome.
+      properties:
+        name:
+          type: string
+          description: Name of the side (e.g. Yes, No).
+  
+    OutcomeEntry:
+      type: object
+      description: A single outcome entry.
+      properties:
+        outcome:
+          type: integer
+          description: Numeric outcome identifier.
+        name:
+          type: string
+          description: Name of the outcome.
+        description:
+          type: string
+          description: Outcome description including class, underlying, expiry, target price, and period.
+        sideSpecs:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutcomeSideSpec"
+          description: Array of side specifications.
+  
+    OutcomeMetaResponse:
+      type: object
+      description: Response containing outcome metadata (testnet-only).
+      properties:
+        outcomes:
+          type: array
+          items:
+            $ref: "#/components/schemas/OutcomeEntry"
+          description: Array of outcome entries.

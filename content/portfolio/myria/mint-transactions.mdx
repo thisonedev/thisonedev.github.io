@@ -1,0 +1,38 @@
+---
+title: Mint Transactions
+description: Mint Transactions Tutorial
+---
+
+**Adding an ERC721 asset** to a collection is commonly known as **"minting"** that asset. You can mint assets by running a **mint transaction** through the **Myria SDK**. After the assets are minted, you can use them in your project or game, or show them together with other items in a collection.
+
+Currently, Myria supports mint transactions for **ERC721 tokens** (also known as NFTs), which are used to identify items in a unique way. You can read more about **ERC721 tokens here**. Upcoming versions of Myria's developer platform will include support for fungible **ERC20 tokens**.
+
+### Creating ERC721 mint transactions
+
+#### Prerequisites
+*   Generate a **Web3 public key and Stark Key**, and register your developer account entity as described in the **quickstart**.
+*   Create a **project** as described here.
+*   Create a **collection** as described here.
+
+#### ERC721 minting flow
+1.  Run a **script** to submit a new mint transaction.
+2.  Myria will attempt to **mint an asset** based on the data provided.
+3.  If the mint succeeds, the asset status is set to `MINTED`, and Myria creates a transaction with `Prepare` status. When a transaction is confirmed on the **Myria chain**, its status is set to `Success`.
+4.  If the mint fails, Myria returns an asset object with `MINT_FAILED` status. No asset is minted and transaction details are not included.
+
+### Asset Token Id
+Each asset has a `tokenId` that represents a **unique identifier** of that asset within the collection. If you provided the correct `metadataApiUrl` format as an argument when you were creating a collection, then you will be able to access your minted asset via the following URL structure:
+
+*   **URI** - `metadataApiUrl` from a given collection.
+*   **TOKEN_ID** - unique token identifier of the mintable asset within that collection, which should be an **incremental value**.
+
+**Example URL:**
+[https://gateway.pinata.cloud/ipfs/QmSjWbBS3rPu5K2TnhyXmwGE1GcVZMRFKg5K3iML](https://gateway.pinata.cloud/ipfs/QmSjWbBS3rPu5K2TnhyXmwGE1GcVZMRFKg5K3iML)
+
+### Limitations
+The following are known **limitations** for all mint transactions:
+*   You can create a **maximum of 50,000 mint transactions** per collection every month.
+*   A mintable asset **has to belong to a collection** and cannot be removed after it's created.
+*   You cannot perform a mint transaction if the collection's contract doesn't implement the `mintFor()` function.
+*   The mintable assets should follow the **ERC721 standard**.
+*   Each `tokenId` should be **unique**. If a non-unique `tokenId` is submitted, you will not be able to mint your asset.

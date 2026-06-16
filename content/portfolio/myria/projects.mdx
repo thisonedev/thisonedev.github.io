@@ -1,0 +1,223 @@
+---
+title: Projects SDK Reference
+description: Projects SDK Reference
+---
+
+This document is a reference to the **Projects module** of the Myria Core SDK. The module contains information about Myria projects.
+
+### Interfaces
+
+#### **CreateProjectParams**
+Data structure passed to `createProject()` method, which contains required data to create a new project.
+
+**Attributes**
+*   **name** - project name
+*   **companyName** - company name that will be working on the project
+*   **contactEmail** - contact email
+*   **starkKey** - Stark Key, has to start with 0x
+
+```typescript
+interface CreateProjectParams {   
+  name: string;   
+  companyName: string;   
+  contactEmail: string;   
+  starkKey: string; 
+}
+```
+
+#### **ProjectResponse**
+Data structure returned by the `createProject()` method.
+
+**Attributes**
+*   **status** - registration status: success, failure
+*   **data** - an object or array of `ProjectResponseData`
+
+```typescript
+interface ProjectResponse {   
+  status: string;   
+  data: ProjectResponseData[] | ProjectResponseData | undefined; 
+}
+```
+
+
+#### **ProjectResponseData**
+Data structure that contains data value of `ProjectResponse`.
+
+**Attributes**
+*   **id** - project id on the Myria network
+*   **createdAt** - when the project was created
+*   **updatedAt** - when the project was updated last time
+*   **name** - project name
+*   **companyName** - company name that will be working on the project
+*   **contactEmail** - contact email
+*   **collectionLimitExpiresAt** - expiration date of your current limit to create collections
+*   **collectionMonthlyLimit** - the max number of collections to create each month for a given project
+*   **collectionRemaining** - the number of collections remained to create this month
+*   **publicId** - public id of your project within the Myria network
+*   **starkKey** - Stark Key, has to start with 0x
+
+```typescript
+interface ProjectResponseData {   
+  id: number;   
+  createdAt: string;   
+  updatedAt: string;   
+  name: string;   
+  companyName: string;   
+  contactEmail: string;   
+  collectionLimitExpiresAt?: string | null;   
+  collectionMonthlyLimit?: number;   
+  collectionRemaining?: number;   
+  publicId?: string;   
+  starkKey: string; 
+}
+```
+
+
+#### **UpdateProjectParams**
+Data structure passed to `updateProject()` method, which contains required data to update a project.
+
+**Attributes**
+*   **id** - project id on the Myria network
+*   **name** - project name
+*   **companyName** - company name that will be working on the project
+*   **contactEmail** - contact email
+*   **starkKey** - Stark Key, has to start with 0x
+
+```typescript
+interface UpdateProjectParams {   
+  id: number;   
+  name: string;   
+  companyName: string;   
+  contactEmail: string;   
+  starkKey: string 
+}
+```
+
+---
+
+### Methods
+
+#### **createProject()**
+Creates a new Myria project.
+
+**Parameters**
+*   `CreateProjectParams` object
+
+**Returns**
+*   Returns a project object.
+
+**Example**
+```typescript
+createProject(payload: CreateProjectParams): Promise<ProjectResponse | undefined>;
+
+import { ProjectManager, CreateProjectParams, ProjectResponse, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const projectManager: ProjectManager = new ProjectManager(env);
+  const params: CreateProjectParams = {     
+    name: "PROJECT_NAME",     
+    companyName: "COMPANY_NAME",     
+    contactEmail: "COMPANY_EMAIL",     
+    starkKey: "STARK_KEY",   
+  };
+  const newProjectResult: ProjectResponse | undefined =      
+    await projectManager.createProject(params); 
+})();
+```
+
+
+**Response**
+*   `ProjectResponse`
+
+#### **getProjectDetail()**
+Returns details of the Myria project.
+
+**Parameters**
+*   **id** - project id
+
+**Returns**
+*   Returns an object with response call status and the data object that contains information.
+
+**Example**
+```typescript
+getProjectDetail(id: string): Promise<ProjectResponse | undefined>;
+
+import { ProjectManager, ProjectResponse, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const projectManager: ProjectManager = new ProjectManager(env);
+  const projectDetailResponse: ProjectResponse | undefined =      
+    await projectManager.getProjectDetail("PROJECT_ID"); 
+})();
+```
+
+
+**Response**
+*   `ProjectResponse`
+
+#### **getProjectList()**
+Returns a list of available Myria projects.
+
+**Parameters**
+*   No parameters.
+
+**Returns**
+*   Returns an object with response call status and the data object that contains the list of projects.
+
+**Example**
+```typescript
+getProjectList(): Promise<ProjectResponse | undefined>;
+
+import { ProjectManager, ProjectResponse, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const projectManager: ProjectManager = new ProjectManager(env);
+  const projectListResponse: ProjectResponse | undefined =      
+    await projectManager.getProjectList(); 
+})();
+```
+
+
+**Response**
+*   `ProjectResponse`
+
+#### **updateProject()**
+Updates a Myria project by a given id.
+
+**Parameters**
+*   `UpdateProjectParams` object
+
+**Returns**
+*   Returns a project object.
+
+**Example**
+```typescript
+updateProject(payload: UpdateProjectParams): Promise<ProjectResponse | undefined>;
+
+import { ProjectManager, UpdateProjectParams, ProjectResponse, EnvTypes } from "myria-core-sdk";
+
+(async (): Promise<void> => {  
+  // STAGING or PRODUCTION   
+  const env = EnvTypes.STAGING;
+  const projectManager: ProjectManager = new ProjectManager(env);
+  const params: UpdateProjectParams = {     
+    id: PROJECT_ID     
+    name: "PROJECT_NAME",     
+    companyName: "COMPANY_NAME",     
+    contactEmail: "COMPANY_EMAIL",     
+    starkKey: "STARK_KEY"   
+  };
+  const updatedProjectResult: ProjectResponse | undefined =      
+    await projectManager.updateProject(params); 
+})();
+```
+
+
+**Response**
+*   `ProjectResponse`

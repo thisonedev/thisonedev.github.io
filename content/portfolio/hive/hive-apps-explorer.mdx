@@ -1,0 +1,49 @@
+---
+title: Hive Apps Explorer
+description: A blockchain explorer for Hive dapps
+---
+
+[Hive Apps Explorer](https://github.com/thisonedev/vault/tree/master/hive/hive-apps-explorer) is a blockchain explorer for Hive dapps.
+
+![demo](../assets/hive-apps-explorer.png)
+
+## Setup
+
+### 1. Clone the repository
+
+```
+https://github.com/thisonedev/vault.git
+```
+
+### 2. Enter hive/hive-apps-explorer directory
+
+```
+cd hive/hive-apps-explorer
+```
+
+### 3. Install dependencies
+
+```
+npm install
+```
+
+### Config
+
+Please add the following api endpoints to your .env file (root folder):
+```
+VITE_HIVE_MAINNET = 'https://api.openhive.network'
+VITE_STEEMENGINE_API = 'https://api.steem-engine.com/rpc'
+```
+
+
+### Running a project
+
+```
+npm run dev
+```
+
+### Building a project
+
+```
+npm run build
+```

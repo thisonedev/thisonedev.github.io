@@ -1,0 +1,2193 @@
+openapi: 3.1.0
+info:
+  title: Hyperliquid Perps Info API Reference
+  version: "1.0.0"
+  description: "Perpetuals and general endpoints on the Hyperliquid POST /info API. All operations share the same URL and HTTP method. Path fragments (/info#operationName) give each action a unique OpenAPI\
+    \ key; the fragment is ignored at runtime."
+servers:
+- url: "https://api.hyperliquid.xyz"
+  description: Mainnet
+- url: "https://api.hyperliquid-testnet.xyz"
+  description: Testnet
+tags:
+- name: Market Data
+  description: Endpoints for retrieving market data such as mids, order books, and candles.
+- name: Account
+  description: Endpoints for querying a user's account state, orders, fills, and sub-accounts.
+- name: Order Management
+  description: Endpoints for order status and historical order data.
+- name: Vaults
+  description: Endpoints for vault details and deposits.
+- name: User Info
+  description: Endpoints for user role, portfolio, referral, and fee information.
+- name: Staking
+  description: Endpoints for staking delegations, history, and rewards.
+- name: Builder
+  description: Endpoints for builder fee approvals and approved builders.
+- name: "Borrow/Lend"
+  description: "Endpoints for borrowing/lending user and reserve state."
+- name: Abstraction
+  description: Endpoints for HIP-3 DEX abstraction and user abstraction state.
+- name: Rate Limits
+  description: Endpoint for querying user rate limits.
+- name: Quote Tokens
+  description: Endpoint for aligned quote token status.
+paths:
+  "/info#allMids":
+    post:
+      operationId: retrieveMidsForAllCoins
+      summary: Retrieve mids for all coins
+      tags:
+      - Market Data
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - allMids
+                dex:
+                  type: string
+                  description: Perp dex name. Defaults to the empty string which represents the first perp dex. Spot mids are only included with the first perp dex.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: object
+                description: Map of coin symbols to mid prices as strings.
+                additionalProperties:
+                  type: string
+              example:
+                APE: "4.33245"
+                ARB: "1.21695"
+      description: Note that if the book is empty, the last trade price will be used as a fallback
+  "/info#openOrders":
+    post:
+      operationId: retrieveUsersOpenOrders
+      summary: Retrieve a user's open orders
+      tags:
+      - Account
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - openOrders
+                user:
+                  $ref: "#/components/schemas/Address"
+                dex:
+                  type: string
+                  description: Perp dex name. Defaults to the empty string which represents the first perp dex. Spot open orders are only included with the first perp dex.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OpenOrder"
+              example:
+              - coin: "BTC"
+                limitPx: "29792.0"
+                oid: 91490942
+                side: "A"
+                sz: "0.0"
+                timestamp: 1681247412573
+      description: See a user's open orders
+  "/info#frontendOpenOrders":
+    post:
+      operationId: retrieveUsersOpenOrdersWithFrontendInfo
+      summary: Retrieve a user's open orders with additional frontend info
+      tags:
+      - Account
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - frontendOpenOrders
+                user:
+                  $ref: "#/components/schemas/Address"
+                dex:
+                  type: string
+                  description: Perp dex name. Defaults to the empty string which represents the first perp dex. Spot open orders are only included with the first perp dex.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FrontendOpenOrder"
+              example:
+              - coin: "BTC"
+                isPositionTpsl: false
+                isTrigger: false
+                limitPx: "29792.0"
+                oid: 91490942
+                orderType: "Limit"
+                origSz: "5.0"
+                reduceOnly: false
+                side: "A"
+                sz: "5.0"
+                timestamp: 1681247412573
+                triggerCondition: "N/A"
+                triggerPx: "0.0"
+  "/info#userFills":
+    post:
+      operationId: retrieveUsersFills
+      summary: Retrieve a user's fills
+      tags:
+      - Account
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userFills
+                user:
+                  $ref: "#/components/schemas/Address"
+                aggregateByTime:
+                  type: boolean
+                  description: When true, partial fills are combined when a crossing order gets filled by multiple different resting orders. Resting orders filled by multiple crossing orders are only aggregated
+                    if in the same block.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fill"
+              example:
+              - closedPnl: "0.0"
+                coin: "AVAX"
+                crossed: false
+                dir: "Open Long"
+                hash: "0xa166e3fa63c25663024b03f2e0da011a00307e4017465df020210d3d432e7cb8"
+                oid: 90542681
+                px: "18.435"
+                side: "B"
+                startPosition: "26.86"
+                sz: "93.53"
+                time: 1681222254710
+                fee: "0.01"
+                feeToken: "USDC"
+                builderFee: "0.01"
+                tid: 118906512037719
+      description: Returns at most 2000 most recent fills
+  "/info#userFillsByTime":
+    post:
+      operationId: retrieveUsersFillsByTime
+      summary: Retrieve a user's fills by time
+      tags:
+      - Account
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              - startTime
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userFillsByTime
+                user:
+                  $ref: "#/components/schemas/Address"
+                startTime:
+                  type: integer
+                  description: Start time in milliseconds, inclusive
+                endTime:
+                  type: integer
+                  description: End time in milliseconds, inclusive. Defaults to current time.
+                aggregateByTime:
+                  type: boolean
+                  description: When true, partial fills are combined when a crossing order gets filled by multiple different resting orders. Resting orders filled by multiple crossing orders are only aggregated
+                    if in the same block.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Fill"
+              examples:
+                Fills:
+                  summary: "Number of fills is limited to 2000"
+                  value:
+                  - closedPnl: "0.0"
+                    coin: "AVAX"
+                    crossed: false
+                    dir: "Open Long"
+                    hash: "0xa166e3fa63c25663024b03f2e0da011a00307e4017465df020210d3d432e7cb8"
+                    oid: 90542681
+                    px: "18.435"
+                    side: "B"
+                    startPosition: "26.86"
+                    sz: "93.53"
+                    time: 1681222254710
+                    fee: "0.01"
+                    feeToken: "USDC"
+                    builderFee: "0.01"
+                    tid: 118906512037719
+      description: Returns at most 2000 fills per response and only the 10000 most recent fills are available
+  "/info#userRateLimit":
+    post:
+      operationId: queryUserRateLimits
+      summary: Query user rate limits
+      tags:
+      - Rate Limits
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - user
+              - type
+              properties:
+                user:
+                  $ref: "#/components/schemas/Address"
+                type:
+                  type: string
+                  enum:
+                  - userRateLimit
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/UserRateLimitResponse"
+              example:
+                cumVlm: "2854574.593578"
+                nRequestsUsed: 2890
+                nRequestsCap: 2864574
+                nRequestsSurplus: 0
+  "/info#orderStatus":
+    post:
+      operationId: queryOrderStatusByOidOrCloid
+      summary: Query order status by oid or cloid
+      tags:
+      - Order Management
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - user
+              - type
+              - oid
+              properties:
+                user:
+                  $ref: "#/components/schemas/Address"
+                type:
+                  type: string
+                  enum:
+                  - orderStatus
+                oid:
+                  oneOf:
+                  - type: integer
+                    format: uint64
+                  - type: string
+                  description: Either u64 representing the order id or 16-byte hex string representing the client order id
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/OrderStatusResponse"
+              examples:
+                FoundOrder:
+                  summary: "A successful response"
+                  value:
+                    status: "order"
+                    order:
+                      order:
+                        coin: "ETH"
+                        side: "A"
+                        limitPx: "2412.7"
+                        sz: "0.0"
+                        oid: 1
+                        timestamp: 1724361546645
+                        triggerCondition: "N/A"
+                        isTrigger: false
+                        triggerPx: "0.0"
+                        children: []
+                        isPositionTpsl: false
+                        reduceOnly: true
+                        orderType: "Market"
+                        origSz: "0.0076"
+                        tif: "FrontendMarket"
+                        cloid: null
+                      status: "filled"
+                      statusTimestamp: 1724361546645
+                MissingOrder:
+                  summary: Missing Order
+                  value:
+                    status: "unknownOid"
+      description: 'The <status> string returned has the following possible values: open, filled, canceled, triggered, rejected, marginCanceled, vaultWithdrawalCanceled, openInterestCapCanceled, selfTradeCanceled,
+        reduceOnlyCanceled, siblingFilledCanceled, delistedCanceled, liquidatedCanceled, scheduledCancel, tickRejected, minTradeNtlRejected, perpMarginRejected, reduceOnlyRejected, badAloPxRejected, iocCancelRejected,
+        badTriggerPxRejected, marketOrderNoLiquidityRejected, positionIncreaseAtOpenInterestCapRejected, positionFlipAtOpenInterestCapRejected, tooAggressiveAtOpenInterestCapRejected, openInterestIncreaseRejected,
+        insufficientSpotBalanceRejected, oracleRejected, perpMaxPositionRejected.'
+  "/info#l2Book":
+    post:
+      operationId: l2BookSnapshot
+      summary: L2 book snapshot
+      tags:
+      - Market Data
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - coin
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - l2Book
+                coin:
+                  type: string
+                  description: coin
+                nSigFigs:
+                  type: integer
+                  description: Optional field to aggregate levels to nSigFigs significant figures. Valid values are 2, 3, 4, 5, and null, which means full precision
+                mantissa:
+                  type: integer
+                  description: Optional field to aggregate levels. This field is only allowed if nSigFigs is 5. Accepts values of 1, 2 or 5.
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/L2BookSnapshot"
+              example:
+                coin: "BTC"
+                time: 1754450974231
+                levels:
+                - - px: "113377.0"
+                    sz: "7.6699"
+                    "n": 17
+                  - px: "113376.0"
+                    sz: "4.13714"
+                    "n": 8
+                - - px: "113397.0"
+                    sz: "0.11543"
+                    "n": 3
+      description: Returns at most 20 levels per side
+  "/info#candleSnapshot":
+    post:
+      operationId: candleSnapshot
+      summary: Candle snapshot
+      tags:
+      - Market Data
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - req
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - candleSnapshot
+                req:
+                  type: object
+                  description: '{"coin": <coin>, "interval": "15m", "startTime": <epoch millis>, "endTime": <epoch millis>}. For HIP-3, you need to prefix with the dex name, e.g. "xyz:XYZ100"'
+                  required:
+                  - coin
+                  - interval
+                  - startTime
+                  - endTime
+                  properties:
+                    coin:
+                      type: string
+                    interval:
+                      type: string
+                      enum:
+                      - "1m"
+                      - "3m"
+                      - "5m"
+                      - "15m"
+                      - "30m"
+                      - "1h"
+                      - "2h"
+                      - "4h"
+                      - "8h"
+                      - "12h"
+                      - "1d"
+                      - "3d"
+                      - "1w"
+                      - "1M"
+                    startTime:
+                      type: integer
+                      description: Epoch milliseconds
+                    endTime:
+                      type: integer
+                      description: Epoch milliseconds
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Candle"
+              example:
+              - "T": 1681924499999
+                "c": "29258.0"
+                "h": "29309.0"
+                "i": "15m"
+                "l": "29250.0"
+                "n": 189
+                "o": "29295.0"
+                "s": BTC
+                "t": 1681923600000
+                "v": "0.98639"
+      description: 'Only the most recent 5000 candles are available. Supported intervals: "1m", "3m", "5m", "15m", "30m", "1h", "2h", "4h", "8h", "12h", "1d", "3d", "1w", "1M"'
+  "/info#maxBuilderFee":
+    post:
+      operationId: checkBuilderFeeApproval
+      summary: Check builder fee approval
+      tags:
+      - Builder
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              - builder
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - maxBuilderFee
+                user:
+                  $ref: "#/components/schemas/Address"
+                builder:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: integer
+                description: Maximum fee approved in tenths of a basis point i.e. 1 means 0.001%
+              example: 1
+  "/info#historicalOrders":
+    post:
+      operationId: retrieveUsersHistoricalOrders
+      summary: Retrieve a user's historical orders
+      tags:
+      - Order Management
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - historicalOrders
+                user:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoricalOrder"
+              example:
+              - order:
+                  coin: "ETH"
+                  side: "A"
+                  limitPx: "2412.7"
+                  sz: "0.0"
+                  oid: 1
+                  timestamp: 1724361546645
+                  triggerCondition: "N/A"
+                  isTrigger: false
+                  triggerPx: "0.0"
+                  children: []
+                  isPositionTpsl: false
+                  reduceOnly: true
+                  orderType: "Market"
+                  origSz: "0.0076"
+                  tif: "FrontendMarket"
+                  cloid: null
+                status: "filled"
+                statusTimestamp: 1724361546645
+      description: Returns at most 2000 most recent historical orders
+  "/info#userTwapSliceFills":
+    post:
+      operationId: retrieveUsersTwapSliceFills
+      summary: Retrieve a user's TWAP slice fills
+      tags:
+      - Account
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userTwapSliceFills
+                user:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TwapSliceFill"
+              example:
+              - fill:
+                  closedPnl: "0.0"
+                  coin: "AVAX"
+                  crossed: true
+                  dir: "Open Long"
+                  hash: "0x0000000000000000000000000000000000000000000000000000000000000000"
+                  oid: 90542681
+                  px: "18.435"
+                  side: "B"
+                  startPosition: "26.86"
+                  sz: "93.53"
+                  time: 1681222254710
+                  fee: "0.01"
+                  feeToken: "USDC"
+                  tid: 118906512037719
+                twapId: 3156
+      description: Returns at most 2000 most recent TWAP slice fills
+  "/info#subAccounts":
+    post:
+      operationId: retrieveUsersSubaccounts
+      summary: Retrieve a user's subaccounts
+      tags:
+      - Account
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - subAccounts
+                user:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubAccount"
+              example:
+              - name: Test
+                subAccountUser: "0x035605fc2f24d65300227189025e90a0d947f16c"
+                master: "0x8c967e73e6b15087c42a10d344cff4c96d877f1d"
+                clearinghouseState:
+                  marginSummary:
+                    accountValue: "29.78001"
+                    totalNtlPos: "0.0"
+                    totalRawUsd: "29.78001"
+                    totalMarginUsed: "0.0"
+                  crossMarginSummary:
+                    accountValue: "29.78001"
+                    totalNtlPos: "0.0"
+                    totalRawUsd: "29.78001"
+                    totalMarginUsed: "0.0"
+                  crossMaintenanceMarginUsed: "0.0"
+                  withdrawable: "29.78001"
+                  assetPositions: []
+                  time: 1733968369395
+                spotState:
+                  balances:
+                  - coin: USDC
+                    token: 0
+                    total: "0.22"
+                    hold: "0.0"
+                    entryNtl: "0.0"
+  "/info#vaultDetails":
+    post:
+      operationId: retrieveDetailsForAVault
+      summary: Retrieve details for a vault
+      tags:
+      - Vaults
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - vaultAddress
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - vaultDetails
+                vaultAddress:
+                  $ref: "#/components/schemas/Address"
+                user:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/VaultDetails"
+              example:
+                name: "Test"
+                vaultAddress: "0xdfc24b077bc1425ad1dea75bcb6f8158e10df303"
+                leader: "0x677d831aef5328190852e24f13c46cac05f984e7"
+                description: "This community-owned vault provides liquidity to Hyperliquid through multiple market making strategies, performs liquidations, and accrues platform fees."
+                portfolio:
+                - - day
+                  - accountValueHistory:
+                    - - 1734397526634
+                      - "329265410.90790099"
+                    pnlHistory:
+                    - - 1734397526634
+                      - "0.0"
+                    vlm: "0.0"
+                - - week
+                  - {}
+                apr: 0.36387129259090006
+                followerState: null
+                leaderFraction: 0.0007904828725729887
+                leaderCommission: 0
+                followers:
+                - user: "0x005844b2ffb2e122cf4244be7dbcb4f84924907c"
+                  vaultEquity: "714491.71026243"
+                  pnl: "3203.43026143"
+                  allTimePnl: "79843.74476743"
+                  daysFollowing: 388
+                  vaultEntryTime: 1700926145201
+                  lockupUntil: 1734824439201
+                maxDistributable: 94856870.164485
+                maxWithdrawable: 742557.680863
+                isClosed: false
+                relationship:
+                  type: "parent"
+                  data:
+                    childAddresses:
+                    - "0x010461c14e146ac35fe42271bdc1134ee31c703a"
+                    - "0x2e3d94f0562703b25c83308a05046ddaf9a8dd14"
+                    - "0x31ca8395cf837de08b24da3f660e77761dfb974b"
+                allowDeposits: true
+                alwaysCloseOnWithdraw: false
+  "/info#userVaultEquities":
+    post:
+      operationId: retrieveUsersVaultDeposits
+      summary: Retrieve a user's vault deposits
+      tags:
+      - Vaults
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userVaultEquities
+                user:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/VaultEquity"
+              example:
+              - vaultAddress: "0xdfc24b077bc1425ad1dea75bcb6f8158e10df303"
+                equity: "742500.082809"
+  "/info#userRole":
+    post:
+      operationId: queryUsersRole
+      summary: Query a user's role
+      tags:
+      - User Info
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userRole
+                user:
+                  $ref: "#/components/schemas/Address"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/UserRoleResponse"
+              examples:
+                User:
+                  summary: "User"
+                  value:
+                    role: "user"
+                Agent:
+                  summary: Agent
+                  value:
+                    role: "agent"
+                    data:
+                      user: "0x..."
+                Vault:
+                  summary: Vault
+                  value:
+                    role: "vault"
+                Subaccount:
+                  summary: Subaccount
+                  value:
+                    role: "subAccount"
+                    data:
+                      master: "0x..."
+                Missing:
+                  summary: Missing
+                  value:
+                    role: "missing"
+  "/info#portfolio":
+    post:
+      operationId: queryUsersPortfolio
+      summary: Query a user's portfolio
+      tags:
+      - User Info
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - portfolio
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/PortfolioResponse"
+              example:
+              - - day
+                - accountValueHistory:
+                  - - 1741886630493
+                    - "0.0"
+                  - - 1741895270493
+                    - "0.0"
+                  pnlHistory:
+                  - - 1741886630493
+                    - "0.0"
+                  - - 1741895270493
+                    - "0.0"
+                  vlm: "0.0"
+              - - week
+                - {}
+              - - month
+                - {}
+              - - allTime
+                - {}
+              - - perpDay
+                - {}
+              - - perpWeek
+                - {}
+              - - perpMonth
+                - {}
+              - - perpAllTime
+                - {}
+  "/info#referral":
+    post:
+      operationId: queryUsersReferralInformation
+      summary: Query a user's referral information
+      tags:
+      - User Info
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - referral
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/ReferralResponse"
+              example:
+                referredBy:
+                  referrer: "0x5ac99df645f3414876c816caa18b2d234024b487"
+                  code: "TESTNET"
+                cumVlm: "149428030.6628420055"
+                unclaimedRewards: "11.047361"
+                claimedRewards: "22.743781"
+                builderRewards: "0.027802"
+                tokenToState:
+                - 0
+                - cumVlm: "149428030.6628420055"
+                  unclaimedRewards: "11.047361"
+                  claimedRewards: "22.743781"
+                  builderRewards: "0.027802"
+                referrerState:
+                  stage: "ready"
+                  data:
+                    code: "TEST"
+                    referralStates:
+                    - cumVlm: "960652.017122"
+                      cumRewardedFeesSinceReferred: "196.838825"
+                      cumFeesRewardedToReferrer: "19.683748"
+                      timeJoined: 1679425029416
+                      user: "0x11af2b93dcb3568b7bf2b6bd6182d260a9495728"
+                rewardHistory: []
+      description: Query a user's referral information. Note that rewardHistory is for legacy rewards. Claimed rewards are now returned in nonFundingLedgerUpdate.
+  "/info#userFees":
+    post:
+      operationId: queryUsersFees
+      summary: Query a user's fees
+      tags:
+      - User Info
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userFees
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/UserFeesResponse"
+              example:
+                dailyUserVlm:
+                - date: "2025-05-23"
+                  userCross: "0.0"
+                  userAdd: "0.0"
+                  exchange: "2852367.0770729999"
+                feeSchedule:
+                  cross: "0.00045"
+                  add: "0.00015"
+                  spotCross: "0.0007"
+                  spotAdd: "0.0004"
+                  tiers:
+                    vip:
+                    - ntlCutoff: "5000000.0"
+                      cross: "0.0004"
+                      add: "0.00012"
+                      spotCross: "0.0006"
+                      spotAdd: "0.0003"
+                    mm:
+                    - makerFractionCutoff: "0.005"
+                      add: '-0.00001'
+                  referralDiscount: "0.04"
+                  stakingDiscountTiers:
+                  - bpsOfMaxSupply: "0.0"
+                    discount: "0.0"
+                  - bpsOfMaxSupply: "0.0001"
+                    discount: "0.05"
+                userCrossRate: "0.000315"
+                userAddRate: "0.000105"
+                userSpotCrossRate: "0.00049"
+                userSpotAddRate: "0.00028"
+                activeReferralDiscount: "0.0"
+                trial: null
+                feeTrialReward: "0.0"
+                nextTrialAvailableTimestamp: null
+                stakingLink:
+                  type: "tradingUser"
+                  stakingUser: "0x54c049d9c7d3c92c2462bf3d28e083f3d6805061"
+                activeStakingDiscount:
+                  bpsOfMaxSupply: "4.7577998927"
+                  discount: "0.3"
+  "/info#delegations":
+    post:
+      operationId: queryUsersStakingDelegations
+      summary: Query a user's staking delegations
+      tags:
+      - Staking
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - delegations
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Delegation"
+              example:
+              - validator: "0x5ac99df645f3414876c816caa18b2d234024b487"
+                amount: "12060.16529862"
+                lockedUntilTimestamp: 1735466781353
+  "/info#delegatorSummary":
+    post:
+      operationId: queryUsersStakingSummary
+      summary: Query a user's staking summary
+      tags:
+      - Staking
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - delegatorSummary
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/DelegatorSummaryResponse"
+              example:
+                delegated: "12060.16529862"
+                undelegated: "0.0"
+                totalPendingWithdrawal: "0.0"
+                nPendingWithdrawals: 0
+  "/info#delegatorHistory":
+    post:
+      operationId: queryUsersStakingHistory
+      summary: Query a user's staking history
+      tags:
+      - Staking
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - delegatorHistory
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DelegatorHistoryEntry"
+              example:
+              - time: 1735380381353
+                hash: "0x55492465cb523f90815a041a226ba90147008d4b221a24ae8dc35a0dbede4ea4"
+                delta:
+                  delegate:
+                    validator: "0x5ac99df645f3414876c816caa18b2d234024b487"
+                    amount: "10000.0"
+                    isUndelegate: false
+  "/info#delegatorRewards":
+    post:
+      operationId: queryUsersStakingRewards
+      summary: Query a user's staking rewards
+      tags:
+      - Staking
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - delegatorRewards
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StakingReward"
+              example:
+              - time: 1736726400073
+                source: "delegation"
+                totalAmount: "0.73117184"
+              - time: 1736726400073
+                source: "commission"
+                totalAmount: "130.76445876"
+  "/info#userDexAbstraction":
+    post:
+      operationId: queryUsersHip3DexAbstractionState
+      summary: Query a user's HIP-3 DEX abstraction state
+      tags:
+      - Abstraction
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userDexAbstraction
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: boolean
+              example: true
+  "/info#userAbstraction":
+    post:
+      operationId: queryUsersAbstractionState
+      summary: Query a user's abstraction state
+      tags:
+      - Abstraction
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - userAbstraction
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: string
+                enum:
+                - unifiedAccount
+                - portfolioMargin
+                - disabled
+                - default
+                - dexAbstraction
+              example: unifiedAccount
+  "/info#alignedQuoteTokenInfo":
+    post:
+      operationId: queryAlignedQuoteTokenStatus
+      summary: Query aligned quote token status
+      tags:
+      - Quote Tokens
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - token
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - alignedQuoteTokenInfo
+                token:
+                  type: integer
+                  description: token index
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/AlignedQuoteTokenInfoResponse"
+              example:
+                isAligned: true
+                firstAlignedTime: 1758949452538
+                evmMintedSupply: "0.0"
+                dailyAmountOwed:
+                - - "2025-10-04"
+                  - "0.0"
+                - - "2025-10-05"
+                  - "0.0"
+                predictedRate: "0.01"
+  "/info#borrowLendUserState":
+    post:
+      operationId: queryBorrowLendUserState
+      summary: "Query borrow/lend user state"
+      tags:
+      - "Borrow/Lend"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - borrowLendUserState
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/BorrowLendUserStateResponse"
+              example:
+                tokenToState:
+                - - 0
+                  - borrow:
+                      basis: "0.0"
+                      value: "0.0"
+                    supply:
+                      basis: "44.69295862"
+                      value: "44.69692314"
+                - - 1105
+                  - borrow:
+                      basis: "0.0"
+                      value: "0.0"
+                    supply:
+                      basis: "0.0"
+                      value: "0.0"
+                health: "healthy"
+                healthFactor: null
+  "/info#borrowLendReserveState":
+    post:
+      operationId: queryBorrowLendReserveState
+      summary: "Query borrow/lend reserve state"
+      tags:
+      - "Borrow/Lend"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - token
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - borrowLendReserveState
+                token:
+                  type: integer
+                  description: token index
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                $ref: "#/components/schemas/BorrowLendReserveStateResponse"
+              example:
+                borrowYearlyRate: "0.05"
+                supplyYearlyRate: "0.0008245002"
+                balance: "3245939.4732256099"
+                utilization: "0.018322226"
+                oraclePx: "1.0"
+                ltv: "0.0"
+                totalSupplied: "3306509.7335290499"
+                totalBorrowed: "60582.61869494"
+  "/info#allBorrowLendReserveStates":
+    post:
+      operationId: queryAllBorrowLendReserveStates
+      summary: "Query all borrow/lend reserve states"
+      tags:
+      - "Borrow/Lend"
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - allBorrowLendReserveStates
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AllBorrowLendReserveStateEntry"
+              example:
+              - - 0
+                - borrowYearlyRate: "0.05"
+                  supplyYearlyRate: "0.0008244951"
+                  balance: "3245960.0596176102"
+                  utilization: "0.0183221137"
+                  oraclePx: "1.0"
+                  ltv: "0.0"
+                  totalSupplied: "3306530.3251102199"
+                  totalBorrowed: "60582.62446067"
+              - - 150
+                - borrowYearlyRate: "0.05"
+                  supplyYearlyRate: "0.0"
+                  balance: "11318.09684696"
+                  utilization: "0.0"
+                  oraclePx: "23.99"
+                  ltv: "0.5"
+                  totalSupplied: "11318.09684696"
+                  totalBorrowed: "0.0"
+  "/info#approvedBuilders":
+    post:
+      operationId: queryApprovedBuildersForUser
+      summary: Query approved builders for user
+      tags:
+      - Builder
+      requestBody:
+        required: true
+        content:
+          "application/json":
+            schema:
+              type: object
+              required:
+              - type
+              - user
+              properties:
+                type:
+                  type: string
+                  enum:
+                  - approvedBuilders
+                user:
+                  $ref: "#/components/schemas/AddressHex"
+      responses:
+        "200":
+          description: Successful response
+          content:
+            "application/json":
+              schema:
+                type: array
+                items:
+                  type: string
+              example:
+              - "0x476fa87b4d3818f437f38f1263bee508d7672d82"
+components:
+  schemas:
+    Address:
+      type: string
+      description: Address in 42-character hexadecimal format; e.g. 0x0000000000000000000000000000000000000000.
+      pattern: ^0x[0-9a-fA-F]{40}$
+    AddressHex:
+      type: string
+      description: hexadecimal format; e.g. 0x0000000000000000000000000000000000000000.
+    OpenOrder:
+      type: object
+      properties:
+        coin:
+          type: string
+        limitPx:
+          type: string
+        oid:
+          type: integer
+        side:
+          type: string
+          description: "\"A\" = ask/sell, \"B\" = bid/buy"
+        sz:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+    FrontendOpenOrder:
+      type: object
+      properties:
+        coin:
+          type: string
+        isPositionTpsl:
+          type: boolean
+        isTrigger:
+          type: boolean
+        limitPx:
+          type: string
+        oid:
+          type: integer
+        orderType:
+          type: string
+        origSz:
+          type: string
+        reduceOnly:
+          type: boolean
+        side:
+          type: string
+          description: "\"A\" = ask/sell, \"B\" = bid/buy"
+        sz:
+          type: string
+        timestamp:
+          type: integer
+          format: int64
+        triggerCondition:
+          type: string
+        triggerPx:
+          type: string
+    Fill:
+      type: object
+      properties:
+        closedPnl:
+          type: string
+        coin:
+          type: string
+        crossed:
+          type: boolean
+        dir:
+          type: string
+        hash:
+          type: string
+        oid:
+          type: integer
+        px:
+          type: string
+        side:
+          type: string
+          description: "\"A\" = ask/sell, \"B\" = bid/buy"
+        startPosition:
+          type: string
+        sz:
+          type: string
+        time:
+          type: integer
+          format: int64
+        fee:
+          type: string
+          x-comment: the total fee, inclusive of builderFee below
+        feeToken:
+          type: string
+        builderFee:
+          type: string
+          x-comment: this is optional and will not be present if 0
+        tid:
+          type: integer
+          format: int64
+    UserRateLimitResponse:
+      type: object
+      properties:
+        cumVlm:
+          type: string
+        nRequestsUsed:
+          type: integer
+          x-comment: max(0, cumulative_used minus reserved)
+        nRequestsCap:
+          type: integer
+        nRequestsSurplus:
+          type: integer
+          x-comment: max(0, reserved minus cumulative_used)
+    OrderDetail:
+      type: object
+      properties:
+        coin:
+          type: string
+        side:
+          type: string
+          description: "\"A\" = ask/sell, \"B\" = bid/buy"
+        limitPx:
+          type: string
+        sz:
+          type: string
+        oid:
+          type: integer
+        timestamp:
+          type: integer
+          format: int64
+        triggerCondition:
+          type: string
+        isTrigger:
+          type: boolean
+        triggerPx:
+          type: string
+        children:
+          type: array
+          items: {}
+        isPositionTpsl:
+          type: boolean
+        reduceOnly:
+          type: boolean
+        orderType:
+          type: string
+        origSz:
+          type: string
+        tif:
+          type: string
+        cloid:
+          type: string
+          nullable: true
+    OrderWithStatus:
+      type: object
+      properties:
+        order:
+          $ref: "#/components/schemas/OrderDetail"
+        status:
+          type: string
+        statusTimestamp:
+          type: integer
+          format: int64
+    OrderStatusResponse:
+      oneOf:
+      - type: object
+        properties:
+          status:
+            type: string
+            enum:
+            - order
+          order:
+            type: object
+            properties:
+              order:
+                $ref: "#/components/schemas/OrderDetail"
+              status:
+                type: string
+              statusTimestamp:
+                type: integer
+                format: int64
+      - type: object
+        properties:
+          status:
+            type: string
+            enum:
+            - unknownOid
+    BookLevel:
+      type: object
+      properties:
+        px:
+          type: string
+        sz:
+          type: string
+        "n":
+          type: integer
+          x-comment: number of levels
+    L2BookSnapshot:
+      type: object
+      properties:
+        coin:
+          type: string
+        time:
+          type: integer
+          format: int64
+        levels:
+          type: array
+          items:
+            type: array
+            items:
+              $ref: "#/components/schemas/BookLevel"
+          description: First element is bids, second is asks.
+    Candle:
+      type: object
+      properties:
+        "T":
+          type: integer
+          format: int64
+        "c":
+          type: string
+        "h":
+          type: string
+        "i":
+          type: string
+        "l":
+          type: string
+        "n":
+          type: integer
+        "o":
+          type: string
+        "s":
+          type: string
+        "t":
+          type: integer
+          format: int64
+        "v":
+          type: string
+    HistoricalOrder:
+      type: object
+      properties:
+        order:
+          $ref: "#/components/schemas/OrderDetail"
+        status:
+          type: string
+          enum:
+          - filled
+          - open
+          - canceled
+          - triggered
+          - rejected
+          - marginCanceled
+        statusTimestamp:
+          type: integer
+          format: int64
+    TwapFill:
+      type: object
+      properties:
+        closedPnl:
+          type: string
+        coin:
+          type: string
+        crossed:
+          type: boolean
+        dir:
+          type: string
+        hash:
+          type: string
+          x-comment: TWAP fills have a hash of 0
+        oid:
+          type: integer
+        px:
+          type: string
+        side:
+          type: string
+        startPosition:
+          type: string
+        sz:
+          type: string
+        time:
+          type: integer
+          format: int64
+        fee:
+          type: string
+        feeToken:
+          type: string
+        tid:
+          type: integer
+          format: int64
+    TwapSliceFill:
+      type: object
+      properties:
+        fill:
+          $ref: "#/components/schemas/TwapFill"
+        twapId:
+          type: integer
+    MarginSummary:
+      type: object
+      properties:
+        accountValue:
+          type: string
+        totalNtlPos:
+          type: string
+        totalRawUsd:
+          type: string
+        totalMarginUsed:
+          type: string
+    ClearinghouseState:
+      type: object
+      properties:
+        marginSummary:
+          $ref: "#/components/schemas/MarginSummary"
+        crossMarginSummary:
+          $ref: "#/components/schemas/MarginSummary"
+        crossMaintenanceMarginUsed:
+          type: string
+        withdrawable:
+          type: string
+        assetPositions:
+          type: array
+          items: {}
+        time:
+          type: integer
+          format: int64
+    SpotBalance:
+      type: object
+      properties:
+        coin:
+          type: string
+        token:
+          type: integer
+        total:
+          type: string
+        hold:
+          type: string
+        entryNtl:
+          type: string
+    SubAccount:
+      type: object
+      properties:
+        name:
+          type: string
+        subAccountUser:
+          type: string
+        master:
+          type: string
+        clearinghouseState:
+          $ref: "#/components/schemas/ClearinghouseState"
+        spotState:
+          type: object
+          properties:
+            balances:
+              type: array
+              items:
+                $ref: "#/components/schemas/SpotBalance"
+    VaultFollower:
+      type: object
+      properties:
+        user:
+          type: string
+        vaultEquity:
+          type: string
+        pnl:
+          type: string
+        allTimePnl:
+          type: string
+        daysFollowing:
+          type: integer
+        vaultEntryTime:
+          type: integer
+          format: int64
+        lockupUntil:
+          type: integer
+          format: int64
+    VaultPortfolioEntry:
+      type: array
+      items: {}
+      description: Tuple of time period string and portfolio data object.
+    VaultDetails:
+      type: object
+      properties:
+        name:
+          type: string
+        vaultAddress:
+          type: string
+        leader:
+          type: string
+        description:
+          type: string
+        portfolio:
+          type: array
+          items: {}
+        apr:
+          type: number
+        followerState:
+          type: object
+          nullable: true
+        leaderFraction:
+          type: number
+        leaderCommission:
+          type: integer
+        followers:
+          type: array
+          items:
+            $ref: "#/components/schemas/VaultFollower"
+        maxDistributable:
+          type: number
+        maxWithdrawable:
+          type: number
+        isClosed:
+          type: boolean
+        relationship:
+          type: object
+        allowDeposits:
+          type: boolean
+        alwaysCloseOnWithdraw:
+          type: boolean
+    VaultEquity:
+      type: object
+      properties:
+        vaultAddress:
+          type: string
+        equity:
+          type: string
+    UserRoleResponse:
+      oneOf:
+      - type: object
+        properties:
+          role:
+            type: string
+            enum:
+            - user
+        description: '"missing", "user", "agent", "vault", or "subAccount"'
+      - type: object
+        properties:
+          role:
+            type: string
+            enum:
+            - agent
+          data:
+            type: object
+            properties:
+              user:
+                type: string
+      - type: object
+        properties:
+          role:
+            type: string
+            enum:
+            - vault
+      - type: object
+        properties:
+          role:
+            type: string
+            enum:
+            - subAccount
+          data:
+            type: object
+            properties:
+              master:
+                type: string
+      - type: object
+        properties:
+          role:
+            type: string
+            enum:
+            - missing
+    PortfolioPeriodData:
+      type: object
+      properties:
+        accountValueHistory:
+          type: array
+          items:
+            type: array
+            items: {}
+        pnlHistory:
+          type: array
+          items:
+            type: array
+            items: {}
+        vlm:
+          type: string
+    PortfolioResponse:
+      type: array
+      items:
+        type: array
+        items: {}
+        description: Tuple of period name and PortfolioPeriodData.
+    ReferralState:
+      type: object
+      properties:
+        cumVlm:
+          type: string
+        cumRewardedFeesSinceReferred:
+          type: string
+        cumFeesRewardedToReferrer:
+          type: string
+        timeJoined:
+          type: integer
+          format: int64
+        user:
+          type: string
+    ReferralResponse:
+      type: object
+      properties:
+        referredBy:
+          type: object
+          properties:
+            referrer:
+              type: string
+            code:
+              type: string
+        cumVlm:
+          type: string
+          x-comment: USDC Only
+        unclaimedRewards:
+          type: string
+          x-comment: USDC Only
+        claimedRewards:
+          type: string
+          x-comment: USDC Only
+        builderRewards:
+          type: string
+          x-comment: USDC Only
+        tokenToState: {}
+        referrerState:
+          type: object
+        rewardHistory:
+          type: array
+          items: {}
+    DailyUserVlm:
+      type: object
+      properties:
+        date:
+          type: string
+        userCross:
+          type: string
+        userAdd:
+          type: string
+        exchange:
+          type: string
+    VipTier:
+      type: object
+      properties:
+        ntlCutoff:
+          type: string
+        cross:
+          type: string
+        add:
+          type: string
+        spotCross:
+          type: string
+        spotAdd:
+          type: string
+    MmTier:
+      type: object
+      properties:
+        makerFractionCutoff:
+          type: string
+        add:
+          type: string
+    StakingDiscountTier:
+      type: object
+      properties:
+        bpsOfMaxSupply:
+          type: string
+        discount:
+          type: string
+    FeeSchedule:
+      type: object
+      properties:
+        cross:
+          type: string
+        add:
+          type: string
+        spotCross:
+          type: string
+        spotAdd:
+          type: string
+        tiers:
+          type: object
+          properties:
+            vip:
+              type: array
+              items:
+                $ref: "#/components/schemas/VipTier"
+            mm:
+              type: array
+              items:
+                $ref: "#/components/schemas/MmTier"
+        referralDiscount:
+          type: string
+        stakingDiscountTiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/StakingDiscountTier"
+    UserFeesResponse:
+      type: object
+      properties:
+        dailyUserVlm:
+          type: array
+          items:
+            $ref: "#/components/schemas/DailyUserVlm"
+        feeSchedule:
+          $ref: "#/components/schemas/FeeSchedule"
+        userCrossRate:
+          type: string
+        userAddRate:
+          type: string
+        userSpotCrossRate:
+          type: string
+        userSpotAddRate:
+          type: string
+        activeReferralDiscount:
+          type: string
+        trial:
+          type: object
+          nullable: true
+        feeTrialReward:
+          type: string
+        nextTrialAvailableTimestamp:
+          type: integer
+          nullable: true
+        stakingLink:
+          type: object
+        activeStakingDiscount:
+          $ref: "#/components/schemas/StakingDiscountTier"
+    Delegation:
+      type: object
+      properties:
+        validator:
+          type: string
+        amount:
+          type: string
+        lockedUntilTimestamp:
+          type: integer
+          format: int64
+    DelegatorSummaryResponse:
+      type: object
+      properties:
+        delegated:
+          type: string
+        undelegated:
+          type: string
+        totalPendingWithdrawal:
+          type: string
+        nPendingWithdrawals:
+          type: integer
+    DelegateDelta:
+      type: object
+      properties:
+        validator:
+          type: string
+        amount:
+          type: string
+        isUndelegate:
+          type: boolean
+    DelegatorHistoryEntry:
+      type: object
+      properties:
+        time:
+          type: integer
+          format: int64
+        hash:
+          type: string
+        delta:
+          type: object
+          properties:
+            delegate:
+              $ref: "#/components/schemas/DelegateDelta"
+    StakingReward:
+      type: object
+      properties:
+        time:
+          type: integer
+          format: int64
+        source:
+          type: string
+        totalAmount:
+          type: string
+    AlignedQuoteTokenInfoResponse:
+      type: object
+      properties:
+        isAligned:
+          type: boolean
+        firstAlignedTime:
+          type: integer
+          format: int64
+        evmMintedSupply:
+          type: string
+        dailyAmountOwed:
+          type: array
+          items:
+            type: array
+            items: {}
+        predictedRate:
+          type: string
+    BorrowSupply:
+      type: object
+      properties:
+        basis:
+          type: string
+        value:
+          type: "string"
+    TokenBorrowLendState:
+      type: object
+      properties:
+        borrow:
+          $ref: "#/components/schemas/BorrowSupply"
+        supply:
+          $ref: "#/components/schemas/BorrowSupply"
+    BorrowLendUserStateResponse:
+      type: object
+      properties:
+        tokenToState:
+          type: array
+          items:
+            type: array
+            items: {}
+        health:
+          type: string
+        healthFactor:
+          type: string
+          nullable: true
+    BorrowLendReserveStateResponse:
+      type: object
+      properties:
+        borrowYearlyRate:
+          type: string
+        supplyYearlyRate:
+          type: string
+        balance:
+          type: string
+        utilization:
+          type: string
+        oraclePx:
+          type: string
+        ltv:
+          type: string
+        totalSupplied:
+          type: string
+        totalBorrowed:
+          type: string
+    AllBorrowLendReserveStateEntry:
+      type: array
+      items: {}
+      description: Tuple of token index and BorrowLendReserveStateResponse.

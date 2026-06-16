@@ -1,0 +1,2049 @@
+openapi: 3.1.0
+
+info:
+  title: Hyperliquid Exchange API
+  version: 1.0.0
+  description: |
+    All exchange actions are submitted as `POST /exchange`. Each logical operation
+    is defined here as a separate path entry so that SDK generators and documentation
+    renderers treat them as distinct functions.
+
+    ## Asset
+
+    Many of the requests take `asset` as an input. For perpetuals this is the index in the
+    `universe` field returned by the `meta` response. For spot assets, use `10000 + index`
+    where `index` is the corresponding index in `spotMeta.universe`. For example, when
+    submitting an order for `PURR/USDC`, the asset that should be used is `10000` because
+    its asset index in the spot metadata is `0`.
+
+    ## Subaccounts and vaults
+
+    Subaccounts and vaults do not have private keys. To perform actions on behalf of a
+    subaccount or vault, signing should be done by the master account and the `vaultAddress`
+    field should be set to the address of the subaccount or vault.
+
+    ## expiresAfter
+
+    Some actions support an optional field `expiresAfter` which is a timestamp in milliseconds
+    after which the action will be rejected. User-signed actions such as Core USDC transfer do
+    not support the `expiresAfter` field. Note that actions consume 5x the usual address-based
+    rate limit when canceled due to a stale `expiresAfter` field.
+
+servers:
+  - url: https://api.hyperliquid.xyz
+    description: Mainnet
+  - url: https://api.hyperliquid-testnet.xyz
+    description: Testnet
+
+components:
+  schemas:
+
+    # ── Primitives ─────────────────────────────────────────────────────────────
+
+    EthAddress:
+      type: string
+      pattern: '^0x[0-9a-fA-F]{40}$'
+      example: '0x0000000000000000000000000000000000000000'
+      description: 42-character hexadecimal Ethereum address.
+
+    Cloid:
+      type: string
+      pattern: '^0x[0-9a-fA-F]{32}$'
+      example: '0x1234567890abcdef1234567890abcdef'
+      description: 128-bit client order ID in hex format.
+
+    Signature:
+      type: object
+      description: EIP-712 signature over the action payload.
+      required: [r, s, v]
+      properties:
+        r:
+          type: string
+        s:
+          type: string
+        v:
+          type: integer
+
+    HyperliquidChain:
+      type: string
+      enum: [Mainnet, Testnet]
+      example: Mainnet
+
+    TifEnum:
+      type: string
+      enum: [Alo, Ioc, Gtc]
+      description: |
+        Time-in-force for limit orders.
+        - `Alo` - Add Liquidity Only (post-only): canceled if it would match immediately.
+        - `Ioc` - Immediate-or-Cancel: unfilled remainder is canceled.
+        - `Gtc` - Good-til-Canceled: rests on the book until filled or canceled.
+
+    LimitOrderType:
+      type: object
+      required: [tif]
+      properties:
+        tif:
+          $ref: '#/components/schemas/TifEnum'
+
+    TriggerOrderType:
+      type: object
+      required: [isMarket, triggerPx, tpsl]
+      properties:
+        isMarket:
+          type: boolean
+        triggerPx:
+          type: string
+          description: Trigger price as a decimal string.
+        tpsl:
+          type: string
+          enum: [tp, sl]
+
+    OrderType:
+      type: object
+      description: Exactly one of `limit` or `trigger` must be present.
+      properties:
+        limit:
+          $ref: '#/components/schemas/LimitOrderType'
+        trigger:
+          $ref: '#/components/schemas/TriggerOrderType'
+
+    OrderObject:
+      type: object
+      description: |
+        Single order. Key meanings:
+        - `a` = asset index
+        - `b` = isBuy
+        - `p` = price
+        - `s` = size
+        - `r` = reduceOnly
+        - `t` = type (limit or trigger)
+        - `c` = cloid (client order id, optional)
+      required: [a, b, p, s, r, t]
+      properties:
+        a:
+          type: integer
+          description: Asset index.
+        b:
+          type: boolean
+          description: '`true` for buy, `false` for sell.'
+        p:
+          type: string
+          description: Price as a decimal string.
+        s:
+          type: string
+          description: Size as a decimal string.
+        r:
+          type: boolean
+          description: reduceOnly.
+        t:
+          $ref: '#/components/schemas/OrderType'
+        c:
+          $ref: '#/components/schemas/Cloid'
+
+    BuilderFee:
+      type: object
+      required: [b, f]
+      description: |
+        Optional builder fee. Key meanings:
+        - `b` = builder address that receives the fee
+        - `f` = fee in tenths of a basis point (e.g. `10` means 1 bp of notional)
+      properties:
+        b:
+          $ref: '#/components/schemas/EthAddress'
+        f:
+          type: number
+
+    # ── Common request fields ──────────────────────────────────────────────────
+
+    CommonExchangeFields:
+      type: object
+      required: [nonce, signature]
+      properties:
+        nonce:
+          type: integer
+          description: Current Unix timestamp in milliseconds. Must be unique per request.
+          example: 1716531066415
+        signature:
+          $ref: '#/components/schemas/Signature'
+        vaultAddress:
+          $ref: '#/components/schemas/EthAddress'
+          description: |
+            Address of the vault or sub-account to act on behalf of.
+            The outer account provides the signature; this field identifies the target.
+        expiresAfter:
+          type: integer
+          description: |
+            Optional Unix timestamp (ms) after which the action is rejected.
+            Not supported on user-signed actions such as `usdSend`.
+            Stale cancellations consume 5x the normal address-based rate limit.
+
+    # ── Shared response schemas ────────────────────────────────────────────────
+
+    DefaultSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        response:
+          type: object
+          properties:
+            type:
+              type: string
+              example: default
+
+    OrderStatus:
+      oneOf:
+        - type: object
+          description: Order is resting on the book.
+          properties:
+            resting:
+              type: object
+              required: [oid]
+              properties:
+                oid:
+                  type: integer
+                  example: 77738308
+        - type: object
+          description: Order was fully filled.
+          properties:
+            filled:
+              type: object
+              required: [totalSz, avgPx, oid]
+              properties:
+                totalSz:
+                  type: string
+                  example: "0.02"
+                avgPx:
+                  type: string
+                  example: "1891.4"
+                oid:
+                  type: integer
+                  example: 77747314
+        - type: object
+          description: Business-logic error for this order slot.
+          properties:
+            error:
+              type: string
+              example: "Order must have minimum value of $10."
+
+    OrderResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        response:
+          type: object
+          properties:
+            type:
+              type: string
+              example: order
+            data:
+              type: object
+              properties:
+                statuses:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/OrderStatus'
+
+    CancelStatus:
+      oneOf:
+        - type: string
+          enum: [success]
+        - type: object
+          properties:
+            error:
+              type: string
+              example: "Order was never placed, already canceled, or filled."
+
+    CancelResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        response:
+          type: object
+          properties:
+            type:
+              type: string
+              example: cancel
+            data:
+              type: object
+              properties:
+                statuses:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CancelStatus'
+
+    TwapOrderResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        response:
+          type: object
+          properties:
+            type:
+              type: string
+              example: twapOrder
+            data:
+              type: object
+              properties:
+                status:
+                  oneOf:
+                    - type: object
+                      properties:
+                        running:
+                          type: object
+                          properties:
+                            twapId:
+                              type: integer
+                              example: 77738308
+                    - type: object
+                      properties:
+                        error:
+                          type: string
+                          example: "Invalid TWAP duration: 1 min(s)"
+
+    TwapCancelResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+        response:
+          type: object
+          properties:
+            type:
+              type: string
+              example: twapCancel
+            data:
+              type: object
+              properties:
+                status:
+                  oneOf:
+                    - type: string
+                      enum: [success]
+                    - type: object
+                      properties:
+                        error:
+                          type: string
+                          example: "TWAP was never placed, already canceled, or filled."
+
+# ── Operations (one path entry per action type) ────────────────────────────────
+#
+#  Because every action shares the same HTTP method+URL, we use a path fragment
+#  (#operationName) to give each operation a unique path key in the spec.
+#  The fragment is ignored by HTTP clients at runtime - all requests go to /exchange.
+#  Tools like Redocly, Stoplight, and openapi-generator use `operationId` to
+#  generate distinct SDK methods regardless of path uniqueness.
+
+paths:
+
+  # ── Order management ────────────────────────────────────────────────────────
+
+  /exchange#placeOrder:
+    post:
+      operationId: placeOrder
+      summary: Place an order
+      description: |
+        See Python SDK for full featured examples on the fields of the order request.
+
+        For limit orders, TIF (time-in-force) sets the behavior of the order upon first hitting the book.
+
+        ALO (add liquidity only, i.e. "post only") will be canceled instead of immediately matching.
+
+        IOC (immediate or cancel) will have the unfilled part canceled instead of resting.
+
+        GTC (good til canceled) orders have no special behavior.
+
+        Client Order ID (cloid) is an optional 128 bit hex string, e.g. `0x1234567890abcdef1234567890abcdef`
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, orders, grouping]
+                      properties:
+                        type:
+                          type: string
+                          enum: [order]
+                        orders:
+                          type: array
+                          minItems: 1
+                          items:
+                            $ref: '#/components/schemas/OrderObject'
+                        grouping:
+                          type: string
+                          enum: [na, normalTpsl, positionTpsl]
+                          description: |
+                            - `na` - no grouping.
+                            - `normalTpsl` - TP/SL orders linked to a specific order.
+                            - `positionTpsl` - TP/SL orders linked to the entire position.
+                        builder:
+                          $ref: '#/components/schemas/BuilderFee'
+            example:
+              action:
+                type: order
+                orders:
+                  - a: 0
+                    b: true
+                    p: "1800.00"
+                    s: "0.1"
+                    r: false
+                    t:
+                      limit:
+                        tif: Gtc
+                grouping: na
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: |
+            Always HTTP 200. Check `response.data.statuses` for per-order outcome
+            (`resting`, `filled`, or `error`).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+              examples:
+                resting:
+                  summary: Order resting on book
+                  value:
+                    status: ok
+                    response:
+                      type: order
+                      data:
+                        statuses:
+                          - resting:
+                              oid: 77738308
+                filled:
+                  summary: Order fully filled
+                  value:
+                    status: ok
+                    response:
+                      type: order
+                      data:
+                        statuses:
+                          - filled:
+                              totalSz: "0.02"
+                              avgPx: "1891.4"
+                              oid: 77747314
+                error:
+                  summary: Business-logic error
+                  value:
+                    status: ok
+                    response:
+                      type: order
+                      data:
+                        statuses:
+                          - error: "Order must have minimum value of $10."
+
+  /exchange#cancelOrders:
+    post:
+      operationId: cancelOrders
+      summary: Cancel order(s)
+      description: Cancel one or more open orders by asset and order ID (`oid`).
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, cancels]
+                      properties:
+                        type:
+                          type: string
+                          enum: [cancel]
+                        cancels:
+                          type: array
+                          minItems: 1
+                          items:
+                            type: object
+                            required: [a, o]
+                            description: '`a` = asset index, `o` = order ID (oid)'
+                            properties:
+                              a:
+                                type: integer
+                                description: Asset index.
+                              o:
+                                type: integer
+                                description: Order ID.
+            example:
+              action:
+                type: cancel
+                cancels:
+                  - a: 0
+                    o: 77738308
+              nonce: 1716531070000
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: |
+            Always HTTP 200. Each entry in `statuses` is either `"success"` or `{error: string}`.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelResponse'
+              examples:
+                success:
+                  summary: Cancel successful
+                  value:
+                    status: ok
+                    response:
+                      type: cancel
+                      data:
+                        statuses:
+                          - success
+                error:
+                  summary: Cancel error
+                  value:
+                    status: ok
+                    response:
+                      type: cancel
+                      data:
+                        statuses:
+                          - error: "Order was never placed, already canceled, or filled."
+
+  /exchange#cancelOrdersByCloid:
+    post:
+      operationId: cancelOrdersByCloid
+      summary: Cancel order(s) by cloid
+      description: Cancel one or more open orders using their client order IDs (`cloid`).
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, cancels]
+                      properties:
+                        type:
+                          type: string
+                          enum: [cancelByCloid]
+                        cancels:
+                          type: array
+                          minItems: 1
+                          items:
+                            type: object
+                            required: [asset, cloid]
+                            properties:
+                              asset:
+                                type: integer
+                              cloid:
+                                $ref: '#/components/schemas/Cloid'
+            example:
+              action:
+                type: cancelByCloid
+                cancels:
+                  - asset: 0
+                    cloid: "0x1234567890abcdef1234567890abcdef"
+              nonce: 1716531070000
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CancelResponse'
+
+  /exchange#scheduleCancel:
+    post:
+      operationId: scheduleCancel
+      summary: Schedule cancel (dead man's switch)
+      description: |
+        Schedule a cancel-all operation at a future time. Not including `time` will remove the
+        scheduled cancel operation. The time must be at least 5 seconds after the current time.
+        Once the time comes, all open orders will be canceled and a trigger count will be incremented.
+        The max number of triggers per day is 10. This trigger count is reset at 00:00 UTC.
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type]
+                      properties:
+                        type:
+                          type: string
+                          enum: [scheduleCancel]
+                        time:
+                          type: integer
+                          description: |
+                            Future Unix timestamp in milliseconds at which all open orders will be canceled.
+                            Omit to clear the scheduled cancel.
+            example:
+              action:
+                type: scheduleCancel
+                time: 1716532000000
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#modifyOrder:
+    post:
+      operationId: modifyOrder
+      summary: Modify an order
+      description: Modify a single open order identified by `oid` or `cloid`.
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, oid, order]
+                      properties:
+                        type:
+                          type: string
+                          enum: [modify]
+                        oid:
+                          description: Order to modify, identified by numeric oid or cloid.
+                          oneOf:
+                            - type: integer
+                            - $ref: '#/components/schemas/Cloid'
+                        order:
+                          $ref: '#/components/schemas/OrderObject'
+            example:
+              action:
+                type: modify
+                oid: 77738308
+                order:
+                  a: 0
+                  b: true
+                  p: "1850.00"
+                  s: "0.1"
+                  r: false
+                  t:
+                    limit:
+                      tif: Gtc
+              nonce: 1716531070000
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /exchange#modifyMultipleOrders:
+    post:
+      operationId: modifyMultipleOrders
+      summary: Modify multiple orders
+      description: Batch-modify multiple open orders in a single request.
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, modifies]
+                      properties:
+                        type:
+                          type: string
+                          enum: [batchModify]
+                        modifies:
+                          type: array
+                          minItems: 1
+                          items:
+                            type: object
+                            required: [oid, order]
+                            properties:
+                              oid:
+                                oneOf:
+                                  - type: integer
+                                  - $ref: '#/components/schemas/Cloid'
+                              order:
+                                $ref: '#/components/schemas/OrderObject'
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderResponse'
+
+  /exchange#placeTwapOrder:
+    post:
+      operationId: placeTwapOrder
+      summary: Place a TWAP order
+      description: |
+        Submit a Time-Weighted Average Price order that splits execution over a given duration.
+
+        Key meanings in the `twap` object:
+        - `a` = asset index
+        - `b` = isBuy
+        - `s` = total size
+        - `r` = reduceOnly
+        - `m` = duration in minutes
+        - `t` = randomize child order timing
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, twap]
+                      properties:
+                        type:
+                          type: string
+                          enum: [twapOrder]
+                        twap:
+                          type: object
+                          required: [a, b, s, r, m, t]
+                          properties:
+                            a:
+                              type: integer
+                              description: Asset index.
+                            b:
+                              type: boolean
+                              description: isBuy.
+                            s:
+                              type: string
+                              description: Total size as a decimal string.
+                            r:
+                              type: boolean
+                              description: reduceOnly.
+                            m:
+                              type: integer
+                              description: Duration in minutes.
+                            t:
+                              type: boolean
+                              description: Randomize child order timing.
+            example:
+              action:
+                type: twapOrder
+                twap:
+                  a: 0
+                  b: true
+                  s: "1.0"
+                  r: false
+                  m: 30
+                  t: true
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwapOrderResponse'
+              examples:
+                running:
+                  summary: TWAP started successfully
+                  value:
+                    status: ok
+                    response:
+                      type: twapOrder
+                      data:
+                        status:
+                          running:
+                            twapId: 77738308
+                error:
+                  summary: TWAP error
+                  value:
+                    status: ok
+                    response:
+                      type: twapOrder
+                      data:
+                        status:
+                          error: "Invalid TWAP duration: 1 min(s)"
+
+  /exchange#cancelTwapOrder:
+    post:
+      operationId: cancelTwapOrder
+      summary: Cancel a TWAP order
+      description: |
+        Cancel a running TWAP order by asset and TWAP ID.
+        Key meanings: `a` = asset index, `t` = twap_id.
+      tags: [Orders]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, a, t]
+                      properties:
+                        type:
+                          type: string
+                          enum: [twapCancel]
+                        a:
+                          type: integer
+                          description: Asset index.
+                        t:
+                          type: integer
+                          description: TWAP ID (twap_id).
+            example:
+              action:
+                type: twapCancel
+                a: 0
+                t: 77738308
+              nonce: 1716531070000
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TwapCancelResponse'
+              examples:
+                success:
+                  value:
+                    status: ok
+                    response:
+                      type: twapCancel
+                      data:
+                        status: success
+                error:
+                  value:
+                    status: ok
+                    response:
+                      type: twapCancel
+                      data:
+                        status:
+                          error: "TWAP was never placed, already canceled, or filled."
+
+  # ── Position management ──────────────────────────────────────────────────────
+
+  /exchange#updateLeverage:
+    post:
+      operationId: updateLeverage
+      summary: Update leverage
+      description: Update cross or isolated leverage on a coin.
+      tags: [Positions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, asset, isCross, leverage]
+                      properties:
+                        type:
+                          type: string
+                          enum: [updateLeverage]
+                        asset:
+                          type: integer
+                          description: Asset index of the coin.
+                        isCross:
+                          type: boolean
+                          description: '`true` for cross-margin, `false` for isolated.'
+                        leverage:
+                          type: integer
+                          description: New leverage value (subject to per-coin constraints).
+            example:
+              action:
+                type: updateLeverage
+                asset: 0
+                isCross: true
+                leverage: 10
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#updateIsolatedMargin:
+    post:
+      operationId: updateIsolatedMargin
+      summary: Update isolated margin
+      description: |
+        Add or remove margin from isolated position.
+
+        Note that to target a specific leverage instead of a USDC value of margin change, there is an
+        alternate action `{"type": "topUpIsolatedOnlyMargin", "asset": <asset>, "leverage": <float string>}`.
+
+        `ntli` is the net transfer amount with 6-decimal USDC precision.
+        Example: `1000000` = +1 USD, `-1000000` = -1 USD.
+      tags: [Positions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, asset, isBuy, ntli]
+                      properties:
+                        type:
+                          type: string
+                          enum: [updateIsolatedMargin]
+                        asset:
+                          type: integer
+                        isBuy:
+                          type: boolean
+                          description: Reserved for future hedge-mode support; currently has no effect.
+                        ntli:
+                          type: integer
+                          description: Amount to add/remove in 6-decimal USDC units. e.g. 1000000 = 1 USD.
+            example:
+              action:
+                type: updateIsolatedMargin
+                asset: 0
+                isBuy: true
+                ntli: 5000000
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  # ── Transfers ────────────────────────────────────────────────────────────────
+
+  /exchange#coreUsdcTransfer:
+    post:
+      operationId: coreUsdcTransfer
+      summary: Core USDC transfer
+      description: |
+        Send usd to another address. This transfer does not touch the EVM bridge.
+        The signature format is human readable for wallet interfaces.
+        **Note**: `expiresAfter` is not supported for this action.
+      tags: [Transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, destination, amount, time]
+                      properties:
+                        type:
+                          type: string
+                          enum: [usdSend]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                          description: Chain ID used when signing, in hex. e.g. "0xa4b1" for Arbitrum.
+                        destination:
+                          $ref: '#/components/schemas/EthAddress'
+                        amount:
+                          type: string
+                          description: Amount of USDC as a decimal string. e.g. "1" for 1 USD.
+                        time:
+                          type: integer
+                          description: Current timestamp in milliseconds; must match `nonce`.
+            example:
+              action:
+                type: usdSend
+                hyperliquidChain: Mainnet
+                signatureChainId: "0xa4b1"
+                destination: "0x0000000000000000000000000000000000000000"
+                amount: "10"
+                time: 1716531066415
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#coreSpotTransfer:
+    post:
+      operationId: coreSpotTransfer
+      summary: Core spot transfer
+      description: |
+        Send spot assets to another address. This transfer does not touch the EVM bridge.
+        The signature format is human readable for wallet interfaces.
+        **Note**: `expiresAfter` is not supported for this action.
+
+        Example EIP-712 typed data for generating the signature:
+        ```json
+        {
+          "types": {
+            "HyperliquidTransaction:SpotSend": [
+              { "name": "hyperliquidChain", "type": "string" },
+              { "name": "destination", "type": "string" },
+              { "name": "token", "type": "string" },
+              { "name": "amount", "type": "string" },
+              { "name": "time", "type": "uint64" }
+            ]
+          },
+          "primaryType": "HyperliquidTransaction:SpotSend",
+          "domain": {
+            "name": "HyperliquidSignTransaction",
+            "version": "1",
+            "chainId": 42161,
+            "verifyingContract": "0x0000000000000000000000000000000000000000"
+          },
+          "message": {
+            "destination": "0x0000000000000000000000000000000000000000",
+            "token": "PURR:0xc1fb593aeffbeb02f85e0308e9956a90",
+            "amount": "0.1",
+            "time": 1716531066415,
+            "hyperliquidChain": "Mainnet"
+          }
+        }
+        ```
+      tags: [Transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, destination, token, amount, time]
+                      properties:
+                        type:
+                          type: string
+                          enum: [spotSend]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        destination:
+                          $ref: '#/components/schemas/EthAddress'
+                        token:
+                          type: string
+                          description: 'Token in `tokenName:tokenId` format. e.g. "PURR:0xc4bf3f870c0e9465323c0b6ed28096c2".'
+                        amount:
+                          type: string
+                          description: Amount as a decimal string. e.g. "0.01".
+                        time:
+                          type: integer
+                          description: Current timestamp in milliseconds; must match `nonce`.
+            example:
+              action:
+                type: spotSend
+                hyperliquidChain: Mainnet
+                signatureChainId: "0xa4b1"
+                destination: "0x0000000000000000000000000000000000000000"
+                token: "PURR:0xc4bf3f870c0e9465323c0b6ed28096c2"
+                amount: "0.01"
+                time: 1716531066415
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#initiateWithdrawal:
+    post:
+      operationId: initiateWithdrawal
+      summary: Initiate a withdrawal request
+      description: |
+        This method is used to initiate the withdrawal flow. After making this request,
+        the L1 validators will sign and send the withdrawal request to the bridge contract.
+        There is a $1 fee for withdrawing at the time of this writing and withdrawals take
+        approximately 5 minutes to finalize.
+      tags: [Transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, amount, time, destination]
+                      properties:
+                        type:
+                          type: string
+                          enum: [withdraw3]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        amount:
+                          type: string
+                          description: Amount of USDC as a decimal string. e.g. "1" for 1 USD.
+                        time:
+                          type: integer
+                          description: Current timestamp in milliseconds; must match `nonce`.
+                        destination:
+                          $ref: '#/components/schemas/EthAddress'
+            example:
+              action:
+                type: withdraw3
+                hyperliquidChain: Mainnet
+                signatureChainId: "0xa4b1"
+                amount: "100"
+                time: 1716531066415
+                destination: "0x0000000000000000000000000000000000000000"
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#transferSpotToPerp:
+    post:
+      operationId: transferSpotToPerp
+      summary: Transfer from Spot account to Perp account (and vice versa)
+      description: |
+        This method is used to transfer USDC from the user's spot wallet to perp wallet and vice versa.
+        `nonce` in the action object must match the outer `nonce`.
+      tags: [Transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, amount, toPerp, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [usdClassTransfer]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        amount:
+                          type: string
+                          description: |
+                            Amount in USD as a decimal string. e.g. "1".
+                            To target a subaccount append `subaccount:<address>`.
+                        toPerp:
+                          type: boolean
+                          description: '`true` = Spot to Perp. `false` = Perp to Spot.'
+                        nonce:
+                          type: integer
+                          description: Must match the outer `nonce`.
+            example:
+              action:
+                type: usdClassTransfer
+                hyperliquidChain: Mainnet
+                signatureChainId: "0xa4b1"
+                amount: "50"
+                toPerp: true
+                nonce: 1716531066415
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#sendAsset:
+    post:
+      operationId: sendAsset
+      summary: Send Asset
+      description: |
+        This generalized method is used to transfer tokens between different perp DEXs, spot balance,
+        users, and/or sub-accounts. Use `""` to specify the default USDC perp DEX and `"spot"` to
+        specify spot. Only the collateral token can be transferred to or from a perp DEX.
+      tags: [Transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, destination, sourceDex, destinationDex, token, amount, fromSubAccount, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [sendAsset]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        destination:
+                          $ref: '#/components/schemas/EthAddress'
+                        sourceDex:
+                          type: string
+                          description: Source perp DEX name. Use "" for default USDC perp DEX, "spot" for spot.
+                        destinationDex:
+                          type: string
+                          description: Destination perp DEX name.
+                        token:
+                          type: string
+                          description: 'Token in `tokenName:tokenId` format. e.g. "PURR:0xc4bf3f870c0e9465323c0b6ed28096c2".'
+                        amount:
+                          type: string
+                          description: Amount as a decimal string. e.g. "0.01".
+                        fromSubAccount:
+                          type: string
+                          description: Sub-account address, or "" if not from a sub-account.
+                        nonce:
+                          type: integer
+                          description: Must match the outer `nonce`.
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#sendToEvmWithData:
+    post:
+      operationId: sendToEvmWithData
+      summary: Send to EVM with data
+      description: |
+        Specialized action for Core to EVM transfer that includes an additional data payload.
+        When used, `coreReceiveWithData` will be called on the linked contract instead of a plain transfer.
+
+        **IMPORTANT**: It is the caller's responsibility to ensure that the token is properly linked
+        and the linked contract supports the following interface:
+
+        ```solidity
+        interface ICoreReceiveWithData {
+          function coreReceiveWithData(
+            address from,
+            bytes32 destinationRecipient,
+            uint32 destinationChainId,
+            uint256 amount,
+            uint64 nonce,
+            bytes calldata data
+          ) external;
+        }
+        ```
+      tags: [Transfers]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, token, amount, sourceDex, destinationRecipient, addressEncoding, destinationChainId, gasLimit, data, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [sendToEvmWithData]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        token:
+                          type: string
+                          description: 'Token in `tokenName:tokenId` format.'
+                        amount:
+                          type: string
+                          description: Amount as a decimal string.
+                        sourceDex:
+                          type: string
+                          description: Source perp DEX name.
+                        destinationRecipient:
+                          type: string
+                          description: Recipient address in the encoding specified by `addressEncoding`.
+                        addressEncoding:
+                          type: string
+                          enum: [hex, base58]
+                        destinationChainId:
+                          type: number
+                        gasLimit:
+                          type: number
+                        data:
+                          type: string
+                          description: Additional bytes payload passed to `coreReceiveWithData`.
+                        nonce:
+                          type: integer
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  # ── Staking ──────────────────────────────────────────────────────────────────
+
+  /exchange#depositIntoStaking:
+    post:
+      operationId: depositIntoStaking
+      summary: Deposit into staking
+      description: Transfer native token from the user's spot account into staking for delegating to validators.
+      tags: [Staking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, wei, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [cDeposit]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        wei:
+                          type: integer
+                          description: Amount of native token to deposit, in wei.
+                        nonce:
+                          type: integer
+                          description: Must match the outer `nonce`.
+            example:
+              action:
+                type: cDeposit
+                hyperliquidChain: Mainnet
+                signatureChainId: "0xa4b1"
+                wei: 1000000000000000000
+                nonce: 1716531066415
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#withdrawFromStaking:
+    post:
+      operationId: withdrawFromStaking
+      summary: Withdraw from staking
+      description: |
+        Transfer native token from staking into the user's spot account.
+        Note that transfers from staking to spot account go through a 7 day unstaking queue.
+      tags: [Staking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, wei, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [cWithdraw]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        wei:
+                          type: integer
+                          description: Amount of native token to withdraw, in wei.
+                        nonce:
+                          type: integer
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#delegateStake:
+    post:
+      operationId: delegateStake
+      summary: Delegate or undelegate stake from validator
+      description: |
+        Delegate or undelegate native tokens to or from a validator.
+        Note that delegations to a particular validator have a lockup duration of 1 day.
+      tags: [Staking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, validator, isUndelegate, wei, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [tokenDelegate]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        validator:
+                          $ref: '#/components/schemas/EthAddress'
+                        isUndelegate:
+                          type: boolean
+                          description: '`true` to remove delegation, `false` to delegate.'
+                        wei:
+                          type: integer
+                          description: Amount in wei.
+                        nonce:
+                          type: integer
+            example:
+              action:
+                type: tokenDelegate
+                hyperliquidChain: Mainnet
+                signatureChainId: "0xa4b1"
+                validator: "0x0000000000000000000000000000000000000000"
+                isUndelegate: false
+                wei: 1000000000000000000
+                nonce: 1716531066415
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#claimRewards:
+    post:
+      operationId: claimRewards
+      summary: Claim rewards
+      description: Claim accumulated staking rewards.
+      tags: [Staking]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type]
+                      properties:
+                        type:
+                          type: string
+                          enum: [claimRewards]
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  # ── Vaults ───────────────────────────────────────────────────────────────────
+
+  /exchange#vaultTransfer:
+    post:
+      operationId: vaultTransfer
+      summary: Deposit or withdraw from a vault
+      description: Add or remove funds from a vault.
+      tags: [Vaults]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, vaultAddress, isDeposit, usd]
+                      properties:
+                        type:
+                          type: string
+                          enum: [vaultTransfer]
+                        vaultAddress:
+                          $ref: '#/components/schemas/EthAddress'
+                        isDeposit:
+                          type: boolean
+                          description: '`true` to deposit into vault, `false` to withdraw.'
+                        usd:
+                          type: number
+                          description: Amount in USD.
+            example:
+              action:
+                type: vaultTransfer
+                vaultAddress: "0x0000000000000000000000000000000000000000"
+                isDeposit: true
+                usd: 100
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  # ── Account / API wallets ────────────────────────────────────────────────────
+
+  /exchange#approveApiWallet:
+    post:
+      operationId: approveApiWallet
+      summary: Approve an API wallet
+      description: |
+        Approves an API Wallet (also sometimes referred to as an Agent Wallet).
+
+        Limits:
+        - 1 unnamed approved wallet per account.
+        - Up to 3 named wallets per account.
+        - 2 additional named agents per sub-account.
+      tags: [Account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, agentAddress, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [approveAgent]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        agentAddress:
+                          $ref: '#/components/schemas/EthAddress'
+                        agentName:
+                          type: string
+                          description: Optional display name for the API wallet.
+                        nonce:
+                          type: integer
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#approveBuilderFee:
+    post:
+      operationId: approveBuilderFee
+      summary: Approve a builder fee
+      description: Approve a maximum fee rate for a specific builder address.
+      tags: [Account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, maxFeeRate, builder, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [approveBuilderFee]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        maxFeeRate:
+                          type: string
+                          description: Maximum allowed builder fee rate as a percent string. e.g. "0.001%".
+                        builder:
+                          $ref: '#/components/schemas/EthAddress'
+                        nonce:
+                          type: integer
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#reserveRequestWeight:
+    post:
+      operationId: reserveRequestWeight
+      summary: Reserve Additional Actions
+      description: |
+        Instead of trading to increase the address based rate limits, this action allows reserving
+        additional actions for 0.0005 USDC per request. The cost is paid from the Perps balance.
+      tags: [Account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, weight]
+                      properties:
+                        type:
+                          type: string
+                          enum: [reserveRequestWeight]
+                        weight:
+                          type: number
+                          description: Number of additional request units to reserve.
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#invalidatePendingNonce:
+    post:
+      operationId: invalidatePendingNonce
+      summary: Invalidate Pending Nonce (noop)
+      description: |
+        This action does not do anything (no operation), but causes the nonce to be marked as used.
+        This can be a more effective way to cancel in-flight orders than the cancel action.
+      tags: [Account]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type]
+                      properties:
+                        type:
+                          type: string
+                          enum: [noop]
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  # ── DEX abstraction ──────────────────────────────────────────────────────────
+
+  /exchange#setUserAbstraction:
+    post:
+      operationId: setUserAbstraction
+      summary: Set User Abstraction
+      description: |
+        Set the DEX abstraction mode for a user or sub-account.
+        Replaces the deprecated `userDexAbstraction` action.
+      tags: [DEX Abstraction]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, user, abstraction, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [userSetAbstraction]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        user:
+                          $ref: '#/components/schemas/EthAddress'
+                          description: User or sub-account address.
+                        abstraction:
+                          type: string
+                          enum: [disabled, unifiedAccount, portfolioMargin]
+                        nonce:
+                          type: integer
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#setAgentAbstraction:
+    post:
+      operationId: setAgentAbstraction
+      summary: Set User Abstraction (agent)
+      description: |
+        Agent-scoped version of `setUserAbstraction`.
+        Replaces the deprecated `agentEnableDexAbstraction` action.
+
+        Abstraction values: `"i"` = disabled, `"u"` = unifiedAccount, `"p"` = portfolioMargin.
+      tags: [DEX Abstraction]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, abstraction]
+                      properties:
+                        type:
+                          type: string
+                          enum: [agentSetAbstraction]
+                        abstraction:
+                          type: string
+                          enum: [i, u, p]
+                          description: '"i" = disabled, "u" = unifiedAccount, "p" = portfolioMargin.'
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#enableUserDexAbstraction:
+    post:
+      operationId: enableUserDexAbstraction
+      summary: Enable HIP-3 DEX abstraction
+      deprecated: true
+      description: |
+        **Deprecated** — prefer `userSetAbstraction`.
+
+        If set, actions on HIP-3 perps will automatically transfer collateral from the
+        validator-operated USDC perps balance for HIP-3 DEXs where USDC is the collateral token,
+        and from spot otherwise. When HIP-3 DEX abstraction is active, collateral is returned to
+        the same source (validator-operated USDC perps or spot balance) when released from positions
+        or open orders.
+      tags: [DEX Abstraction]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, hyperliquidChain, signatureChainId, user, enabled, nonce]
+                      properties:
+                        type:
+                          type: string
+                          enum: [userDexAbstraction]
+                        hyperliquidChain:
+                          $ref: '#/components/schemas/HyperliquidChain'
+                        signatureChainId:
+                          type: string
+                        user:
+                          $ref: '#/components/schemas/EthAddress'
+                        enabled:
+                          type: boolean
+                        nonce:
+                          type: integer
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  /exchange#enableAgentDexAbstraction:
+    post:
+      operationId: enableAgentDexAbstraction
+      summary: Enable HIP-3 DEX abstraction (agent)
+      deprecated: true
+      description: |
+        **Deprecated** — prefer `agentSetAbstraction`.
+
+        Same effect as `userDexAbstraction`, but only works if setting the value from `null` to `true`.
+      tags: [DEX Abstraction]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type]
+                      properties:
+                        type:
+                          type: string
+                          enum: [agentEnableDexAbstraction]
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+  # ── Validator ────────────────────────────────────────────────────────────────
+
+  /exchange#validatorVoteRiskFreeRate:
+    post:
+      operationId: validatorVoteRiskFreeRate
+      summary: Validator vote on risk-free rate for aligned quote asset
+      description: Submit a validator vote for the risk-free rate of the aligned quote asset.
+      tags: [Validator]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: '#/components/schemas/CommonExchangeFields'
+                - type: object
+                  required: [action]
+                  properties:
+                    action:
+                      type: object
+                      required: [type, riskFreeRate]
+                      properties:
+                        type:
+                          type: string
+                          enum: [validatorL1Stream]
+                        riskFreeRate:
+                          type: string
+                          description: Risk-free rate as a decimal string. e.g. "0.04" for 4%.
+            example:
+              action:
+                type: validatorL1Stream
+                riskFreeRate: "0.04"
+              nonce: 1716531066415
+              signature:
+                r: "0xabc..."
+                s: "0xdef..."
+                v: 27
+      responses:
+        '200':
+          description: Always HTTP 200.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DefaultSuccessResponse'
+
+tags:
+  - name: Orders
+    description: Place, modify, and cancel spot and perpetual orders including TWAP.
+  - name: Positions
+    description: Adjust leverage and margin on open positions.
+  - name: Transfers
+    description: Move funds between addresses, accounts, spot, and perp wallets.
+  - name: Staking
+    description: Deposit, withdraw, delegate, and claim staking rewards.
+  - name: Vaults
+    description: Deposit into and withdraw from vaults.
+  - name: Account
+    description: Manage API wallets, builder fees, rate limits, and nonces.
+  - name: DEX Abstraction
+    description: Configure HIP-3 DEX abstraction modes.
+  - name: Validator
+    description: Validator-only actions such as voting on the risk-free rate.

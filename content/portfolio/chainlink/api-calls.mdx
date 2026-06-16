@@ -1,0 +1,180 @@
+---
+title: API Calls Tutorial
+description: API Calls Tutorial
+---
+
+## Prerequisites
+This tutorial requires basic knowledge about Ethereum, smart contracts, and the Chainlink Request & Receive cycle. If you're unfamiliar with those concepts, follow the [The Basics](https://docs.chain.link/getting-started/conceptual-overview) or [Random Numbers](https://docs.chain.link/tutorials/random-numbers) tutorials.
+
+By the end of the tutorial, you should know the following:
+*   How to request data from a public API in a smart contract.
+*   Understand what Core Adapters and External Adapters are and how Oracle Jobs use them.
+*   Be able to find the Oracle Jobs and Adapters for your contract.
+
+---
+
+## How to request data from an Oracle Job
+
+### 1. Requesting API Data
+
+#### 1a. Request & Receive Recap
+The request and receive cycle describes how a smart contract requests data from an oracle and receives the response in a separate transaction. If you need a refresher, check out the [Basic Request Model](https://docs.chain.link/getting-started/basic-request-model). In the Random Numbers tutorial, we request randomness from a VRF oracle, then await the response. The fulfillment function is already given to us from the `VRFConsumerBase` contract, so oracles already know where to send the response to. However, with API calls, our contract defines which function it wants to receive the response to.
+
+However, before we go into the implementation, let's first understand how Oracle jobs can get data on-chain.
+
+#### 1b. Initiators
+Initiators are what kick off a job inside an Oracle. In the case of a Request and Receive job, the **RunLog initiator** watches the blockchain for when a smart contract makes a request. Once it catches a request, it initiates the job. This runs the adapters (both core and external) that the job is configured to run, eventually returning the response to the contract that made the request.
+
+#### 1c. Core Adapters
+Each oracle job has a configured set of tasks it needs to carry out when it is run. These tasks are defined by what Adapters they support. For example: if a job needs to make a GET request to an API, find a specific unsigned integer field in a JSON response, then submit that back to the requesting contract, it would need a job with the following Core Adapters:
+*   **HttpGet** - Call the API.
+*   **EthTx** - Submit the transaction to the chain, completing the cycle.
+
+Let's walk through a real example, where we retrieve 24 volume of the ETH/USD pair from the cryptocompare API.
+
+#### Core Adapters Example
+*   **HttpGet** - Calls the API and returns the body of an HTTP GET result for ETH/USD pair.
+*   **JsonParse** - walks a specified path (`"RAW.ETH.USD.VOLUME24HOUR"`) and returns the value found at that result. Example: `703946.0675653099`.
+*   **Multiply** - parses the input into a float and multiplies it by the 10^18. Example: `703946067565309900000000`.
+*   **EthUint256** - formats the input into an integer and then converts it into Solidity's `uint256` format. Example: `0xc618a1e4`.
+*   **EthTx** - takes the given input, places it into the data field of the transaction, signs a transaction, and broadcasts it to the network. Example: transaction result.
+
+**Important:** Some core adapters accept parameters to be passed to them to inform them how to run. For example: `JsonParse` accepts a `path` parameter which informs the adapter where to find the data in the JSON object.
+
+Let's see what this looks like in a contract.
+
+#### Contract Example
+```json
+{
+  "RAW": {
+    "ETH": {
+      "USD": {
+        "VOLUMEDAYTO": 953806939.7194247,
+        "VOLUME24HOUR": 703946.0675653099,
+        "VOLUME24HOURTO": 1265826345.488568
+      }
+    }
+  }
+}
+```
+
+```solidity
+// SPDX-License-Identifier: MIT 
+pragma solidity ^0.8.7;
+
+import "@chainlink/contracts/src/v0.8/ChainlinkClient.sol";
+
+/**  
+ * THIS IS AN EXAMPLE CONTRACT WHICH USES HARDCODED VALUES FOR CLARITY.
+ */ 
+contract APIConsumer is ChainlinkClient {     
+    using Chainlink for Chainlink.Request;        
+    
+    uint256 public volume;          
+    address private oracle;     
+    bytes32 private jobId;     
+    uint256 private fee;          
+    
+    /**      
+     * Network: Kovan      
+     * Oracle: 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8 (Chainlink Devrel Node)      
+     * Job ID: d5270d1c311941d0b08bead21fea7747      
+     * Fee: 0.1 LINK      
+     */     
+    constructor() {         
+        setPublicChainlinkToken();         
+        oracle = 0xc57B33452b4F7BB189bB5AfaE9cc4aBa1f7a4FD8;         
+        jobId = "d5270d1c311941d0b08bead21fea7747";         
+        fee = 0.1 * 10 ** 18; // (Varies by network and job)     
+    }          
+    
+    /**      
+     * Create a Chainlink request to retrieve API response, find the target      
+     * data, then multiply by 1000000000000000000 (to remove decimal places)
+     */     
+    function requestVolumeData() public returns (bytes32 requestId)      
+    {         
+        Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);                  
+        
+        // Set the URL to perform the GET request on         
+        request.add("get", "https://min-api.cryptocompare.com/data/pricemultifull?fsyms=ETH&tsyms=USD");                  
+        
+        // Set the path to find the desired data in the API response
+        request.add("path", "RAW.ETH.USD.VOLUME24HOUR");
+
+        int timesAmount = 10**18;         
+        request.addInt("times", timesAmount);                  
+        
+        // Sends the request         
+        return sendChainlinkRequestTo(oracle, request, fee);     
+    }          
+    
+    /**      
+     * Receive the response in the form of uint256      
+     */      
+    function fulfill(bytes32 _requestId, uint256 _volume) public recordChainlinkFulfillment(_requestId)     
+    {         
+        volume = _volume;     
+    }
+
+    // function withdrawLink() external {} - Implement a withdraw function
+}
+```
+
+[Deploy this contract using Remix ↗](Deploy this contract using Remix)
+[What is Remix?](What is Remix?)
+
+Let's walk through what's happening here:
+*   **Constructor** - Setup the contract with the Oracle address, Job ID, and LINK fee that the oracle charges for the job.
+*   **requestVolumeData** - This builds and sends a request, which includes the fulfillment functions selector, to the oracle. Notice how it adds the `get`, `path` and `times` parameters. These are read by the Adapters in the job to perform the tasks correctly. `get` is used by `HttpGet`, `path` is used by `JsonParse` and `times` is used by `Multiply`.
+*   **fulfill** - Where the result is sent once the Oracle job is complete.
+
+**Important:** The calling contract should own enough LINK to pay the specified fee (by default 0.1 LINK). You can use this [tutorial to fund your contract](tutorial to fund your contract).
+
+This was an example of a basic HTTP GET request. However, it requires defining the API URL directly in the smart contract. This can, in fact, be extracted and configured on the Job level inside the Oracle.
+
+#### 1d. External Adapters
+We split Adapters into two subcategories:
+*   **Core Adapters** - These are what we described earlier and come built-in to each node.
+*   **External Adapters** - perform specific tasks like calling a particular endpoint with a specific set of parameters (like authentication secrets that shouldn't be publicly visible smart contracts).
+
+Here are some examples of external adapters:
+*   **Markets data**: AlphaChain.
+*   **Real-world events**: SportsData, COVID Tracker.
+*   **Social media proofs**: MUBC Retweet Verifier.
+*   **Cryptocurrency aggregators**: Coingecko, CoinAPI.
+
+All of these can be found on [Chainlink Market](Chainlink Market).
+
+If all the parameters are defined within the Oracle job, the only thing a smart contract needs to define to consume it is:
+*   JobId.
+*   Oracle address.
+*   LINK fee.
+*   Fulfillment function.
+
+This makes for a much more succinct smart contract, where the `requestVolumeData` function from the code example above would look more like this:
+
+```solidity
+function requestVolumeData() public returns (bytes32 requestId) {     
+    Chainlink.Request memory request = buildChainlinkRequest(jobId, address(this), this.fulfill.selector);
+    // Extra parameters don't need to be defined here because they are already in the job
+    return sendChainlinkRequestTo(oracle, request, fee); 
+}
+```
+
+### 2. Exercise: Construct your own Contract
+Now that we know how core adapters and external adapters are used to construct jobs and how smart contracts can use jobs to make requests let's put that to use!
+
+Head to [Make an Existing Job Request](https://docs.chain.link/any-api/get-request/examples/existing-job-request) to see how a smart contract can get any city's temperature using an existing oracle job found on Chainlink Market, without having to specify the URL inside the contract.
+
+Then, using your knowledge of external adapters, find a different adapter on the market, and create another contract that consumes that data. Let us know the cool things you come up with in our discord!
+
+### 3. Further Reading
+*   [Blog: Connect a Smart Contract to the Twitter API](https://blog.chain.link/connect-smart-contract-to-twitter-api/).
+*   [Blog: Connect a Tesla Vehicle API to a Smart Contract](https://blog.chain.link/create-tesla-smart-contract-rental/).
+*   [Blog: OAuth and API Authentication in Smart Contracts](https://blog.chain.link/oauth-and-api-authentication-in-smart-contracts-2/).
+
+### What's Next
+
+*   [Make a GET Request](https://docs.chain.link/any-api/get-request/examples/get-request).
+*   [Make an Existing Job Request](https://docs.chain.link/any-api/get-request/examples/existing-job-request).
