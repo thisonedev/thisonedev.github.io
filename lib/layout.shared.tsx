@@ -11,11 +11,21 @@ export function baseOptions(): BaseLayoutProps {
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,
     links: [
       {
+        text: 'Portfolio',
+        url: '/portfolio',
+        secondary: true,
+      },
+      {
+        text: 'Blog',
+        url: '/blog',
+        secondary: true,
+      },
+      {
         type: 'icon',
         icon: <Mail />,
         text: 'Mail',
         url: 'mailto:thisonedev.md@gmail.com',
-      }
+      },
     ],
   };
 }

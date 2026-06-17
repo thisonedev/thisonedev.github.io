@@ -55,3 +55,11 @@ body {
 #nd-page .prose a[data-card] {
   margin-bottom: 10px;
 }
+
+#nd-nav nav {
+  font-size: 0.875rem;
+}
+
+button[data-theme-toggle] {
+  display: none !important;
+}

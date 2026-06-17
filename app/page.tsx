@@ -28,9 +28,15 @@ export default function HomePage() {
         <div className="flex flex-wrap items-center justify-center gap-3">
           <Link
             href="/portfolio"
-            className="rounded-md border border-fd-border px-4 py-2 text-sm font-medium transition hover:bg-fd-accent"
+            className="rounded-md bg-fd-primary px-4 py-2 text-sm font-medium text-fd-primary-foreground transition hover:opacity-90"
           >
             View my portfolio
+          </Link>
+          <Link
+            href="/blog"
+            className="rounded-md border border-fd-border px-4 py-2 text-sm font-medium transition hover:bg-fd-accent"
+          >
+            Read my blog
           </Link>
         </div>
 
