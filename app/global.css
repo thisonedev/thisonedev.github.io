@@ -61,5 +61,5 @@ body {
 }
 
 button[data-theme-toggle] {
-  display: none !important;
+  order: 999;
 }
