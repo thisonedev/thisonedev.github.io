@@ -249,48 +249,54 @@ Copy the token and save it as a secret named `PUBLIC_REPO_PUSH_TOKEN` on the pri
 Still on `master`, create `.github/workflows/promote.yml`:
 
 ```yaml
-# .github/workflows/promote.yml
-name: Promote page to public docs
+name: Promote page to public site
 on:
   workflow_dispatch:
     inputs:
-      path:
-        description: "Path to the file, relative to content/"
+      paths:
+        description: "Comma-separated paths relative to content/ (e.g. docs/new-feature.mdx,blog/new-post.mdx,assets/01.png)"
         required: true
 
 jobs:
   promote:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout private docs
+      - name: Checkout staging
         uses: actions/checkout@v4
         with:
-          path: private
+          path: staging
 
-      - name: Checkout public docs
+      - name: Checkout public site
         uses: actions/checkout@v4
         with:
-          repository: acme/docs
+          repository: YOUR_GITHUB_USERNAME/YOUR_PUBLIC_REPO
           token: ${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}
           path: public
 
-      - name: Copy the approved page across
+      - name: Copy approved pages across
         run: |
-          mkdir -p "public/content/$(dirname "${{ inputs.path }}")"
-          cp "private/content/${{ inputs.path }}" "public/content/${{ inputs.path }}"
-          sed -i '/^visibility: staging-only$/d' "public/content/${{ inputs.path }}"
+          IFS=',' read -ra FILES <<< "${{ inputs.paths }}"
+          for path in "${FILES[@]}"; do
+            path=$(echo "$path" | xargs)
+            mkdir -p "public/content/$(dirname "$path")"
+            cp "staging/content/$path" "public/content/$path"
+          done
 
       - name: Open a PR against the public repo
         working-directory: public
         env:
           GH_TOKEN: ${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}
         run: |
-          git checkout -b "promote/${{ inputs.path }}"
-          git add "content/${{ inputs.path }}"
-          git commit -m "Promote ${{ inputs.path }} from private staging"
-          git push origin "promote/${{ inputs.path }}"
-          gh pr create --title "Promote: ${{ inputs.path }}" \
-            --body "copied from the private staging repo, merge when the feature ships" \
+          git config user.email "YOUR_GITHUB_USERNAME@users.noreply.github.com"
+          git config user.name "YOUR_GITHUB_USERNAME"
+          COMMIT_MSG=$(git -C $GITHUB_WORKSPACE/staging log -1 --pretty=%s)
+          BRANCH="promote/$(date +%Y%m%d-%H%M%S)"
+          git checkout -b "$BRANCH"
+          git add content/
+          git commit -m "$COMMIT_MSG"
+          git push origin "$BRANCH"
+          gh pr create --title "$COMMIT_MSG" \
+            --body "Files: ${{ inputs.paths }}" \
             --base master
 ```
 
