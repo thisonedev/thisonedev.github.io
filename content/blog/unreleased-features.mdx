@@ -242,7 +242,7 @@ git push staging master
 
 The promote workflow copies a finished page from the private repo into the public one and opens a pull request. It requires write access to the public repo, so create a fine-grained personal access token first.
 
-Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens → generate new token. Set the resource owner to your account, restrict access to the public docs repo only, grant read and write on Contents and Pull requests, and generate your token.
+Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token. Set the resource owner to your account, restrict access to the public docs repo only, grant read and write on Contents and Pull requests, and generate your token.
 
 Copy the token and save it as a secret named `PUBLIC_REPO_PUSH_TOKEN` on the private repo under Settings → Secrets and variables → Actions.
 
@@ -377,15 +377,17 @@ git push staging staging/new-feature --force-with-lease
 </Step>
 
 <Step>
-### Close the staging pull request
+### Merge the staging pull request
 
-Once reviewers have approved, close the pull request on the staging repo without merging. The page does not land on `staging/master`. Rebase from `origin/master`, squash your commits, and run the promote workflow to ship it.
+Once reviewers have approved, merge the pull request on the staging repo.
 </Step>
 
 <Step>
 ### Run the promote workflow
 
 Go to the private repo on GitHub, open Actions, select Promote page to public docs, and click Run workflow. Enter the file path relative to `content/`, for example `new-feature/index.mdx`, and run it.
+
+![img](./assets/01.png)
 
 The workflow copies the file into the public repo and opens a pull request there. Merging that pull request is what ships the page and triggers the public site's deploy workflow.
 
