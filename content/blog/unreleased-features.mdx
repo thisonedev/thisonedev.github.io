@@ -1,0 +1,448 @@
+---
+title: Documenting unreleased features
+description: "Documenting unreleased features in open source: every real option, from a disposable draft to an automated private fork"
+date: 2026-06-19
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+I had four days to document Upkeep registration, a new Chainlink product that let a contract register itself for automated execution, complete with its own funding flow and a minimum balance rule that would silently stop the Upkeep from running if I got it wrong.
+
+None of it had shipped yet. I had to register a real Upkeep myself to confirm the steps actually worked, write up the whole process end to end, get it through review, and keep all of it out of sight until the date marketing had fixed for the announcement.
+
+I didn't start with a Notion page or a HackMD doc, though I know plenty of writers reach for one first. Four days doesn't leave room for a draft that has to be rebuilt into a real page later, so I went straight to a private fork of the docs repo: a second remote that only reviewers could reach, with its own preview so people could actually read the page instead of a raw markdown diff. Once it cleared review, I merged the branch into the public docs myself a few hours before marketing's announcement went out.
+
+I've run that same shape of release more than once since: test the feature myself, write it up somewhere private, get it reviewed, merge by hand close to the date. It's worked every time, but I'm sure some of what I did by hand could be scripted instead, which is most of what this post is actually about.
+
+These days, almost every web3 docs site runs on one of a handful of platforms: 
+- Docusaurus (Sui, Arbitrum)
+- Fumadocs (Ethereum, Solana, Qvac, Avalanche, Uniswap)
+- Mintlify (Near, Jupiter, Base)
+- Astro (Chainlink)
+- GitBook (Hyperliquid, Mantle)
+
+That's what this post sticks to, instead of covering every static site generator that exists, including the Eleventy setup my own team was running back when I documented Upkeep.
+
+None of the approach for Upkeep was really a tooling question. It came down to one planning decision, made before I wrote a word: how private "not yet public" actually needed to be. That single answer decided almost everything else, which method to use and how much automation was worth building around it.
+
+## How private does "private" actually need to be?
+
+Before reaching for any tool, it helps to decide what "hidden" actually means for the page you're writing. Generally, teams land in one of two camps, and a confirmed announcement date usually makes it obvious early which one you're in:
+
+1. The first is semi-private. You're fine with the content existing somewhere a determined person could find it: an old commit in a public repo, a page nothing links to. The point is just that casual visitors and search engines won't stumble onto it by accident. This is closer to tidiness than privacy, keeping a half-finished page out of the nav, or sharing a direct link with one beta tester without telling everyone else.
+
+2. The second is fully private. The page must not be reachable by anyone outside an approved list, full stop. This is what design-partner programs, fixed-date launches, and anything competitively sensitive actually require, even when teams don't always realize that's what they're asking for. A confirmed date with marketing already lined up is about as clear a signal as you'll get that you're in the second camp, not the first, and that was true for Upkeep from day one.
+
+Most documentation tooling defaults to making semi-private easy and fully private hard, so teams often end up with the wrong guarantee for what they're actually protecting. That mismatch is where most of the pain in this space comes from: the private repo that "doesn't scale," the unlisted page that turns up in Google anyway, the Notion link nobody can find six months later. Fully private is the harder problem, and it's the one that mattered to me, so that's where most of this post ends up living.
+
+One quick gut check before picking a method: who exactly has to be kept out, the general public or literally everyone but a handful of named partners, and how expensive a leak would be relative to how long the secret has to hold. Three days until a synchronized launch is a different problem than a six-month confidential project. Both answers are what actually decide which method fits, not how impressive the tooling sounds.
+
+## Approach #1: Semi-private
+
+### Disposable drafts
+
+Most teams start somewhere messier than any pipeline: a Notion page, a HackMD doc, a shared Google Doc. That's fine for the early review phase, especially when there isn't a tight deadline forcing a jump straight to something sturdier. These tools make terrible permanent homes, though, especially in the Docs as Code and markdown-first infrastructure.
+
+The page collects a few rounds of comments, the shipped feature changes slightly from what was written, and two slightly different descriptions of the same thing end up living in two different systems, with nobody remembering to check the older one.
+
+The fix tends to be procedural more than technical. The drafts that survive that transition cleanly are usually the ones that already mirror the heading structure and frontmatter fields of the real docs, so turning one into an actual page later looks more like a copy and paste than a rewrite.
+
+I've gotten in the habit of treating the link itself as a comment thread with markdown rendering, something people read and react to, rather than a page anyone is meant to bookmark as the real destination.
+
+### Frontmatter gating
+
+This whole approach boils down to a flag somewhere in a page's metadata that tells the build process what to do with it. It's one file with one history, so there's no second copy of the content sitting anywhere else. It's the option most teams reach for first because it needs no second repo and no new infrastructure.
+
+Worth saying clearly upfront, because it matters a lot for an open source project specifically: this hides content from the rendered website, not from git history. If the docs repo is public, anyone willing to read commits can find the page regardless of what the build does with it.
+
+That's a fine tradeoff if the goal is keeping a half-finished page off the nav and out of search results, or if the source repo happens to be private even though the rendered site is open. However, it is not a substitute for real privacy in a fully public repo, which needs an actual access control, not a mere flag in the front matter.
+
+That said, you can play with frontmatter in a few ways:
+
+1. **Docusaurus** ships two frontmatter fields that solve different problems. `draft: true` pulls a page out of production builds entirely; it only shows up when running the local dev server. `unlisted: true` keeps the page in the production build and gives it a working URL, but drops it from the sidebar, the search index, and the sitemap. That's the one to reach for once a page is finished and the only goal is handing a beta tester a direct link before announcing it widely.
+
+```md
+---
+title: Register Upkeep
+unlisted: true
+---
+
+Register an Upkeep, fund it, and Chainlink Keepers runs it automatically.
+```
+
+2. **Fumadocs** takes a slightly different approach. A page only shows up in the sidebar if it's listed in the relevant `meta.json` file's `pages` array, so leaving it out keeps it out of navigation. The page still gets a working route, though, since Fumadocs generates routes from the files in the content directory regardless of what `meta.json` says about navigation. For real filtering rather than just hiding from the sidebar, Fumadocs's own documentation recommends going a level deeper: tag pages with a custom field and filter the content source before it ever reaches the page loader, so excluded files never exist as far as that build is concerned.
+
+```json
+// content/docs/upkeep/meta.json
+{
+  "title": "Upkeep",
+  "pages": ["index", "funding"]
+}
+```
+
+3. **Mintlify** uses a `hidden: true` frontmatter field. A hidden page is pulled from the sidebar, search, and the sitemap automatically, since Mintlify applies `noindex` to hidden pages by default, but it still resolves at its URL for anyone holding the link.
+
+```md
+---
+title: "Register Upkeep"
+hidden: true
+---
+```
+
+4. **Astro** has no draft system of its own. Teams running Starlight, the docs theme most Astro sites use, get a `draft: true` field that excludes the page from production builds, the same idea as Docusaurus's, though it only takes effect on a real production build, not the dev server.
+
+```md
+---
+title: "Register Upkeep"
+draft: true
+---
+```
+
+5. **Others.** Most static generators have nothing like this built in at all. They typically read files out of a directory, so the same idea can be built once, as a pre-build step that splits the content folder into two folders by a frontmatter field, then point whichever tool is in use at one or the other.
+
+```js
+#!/usr/bin/env node
+// scripts/split-content.mjs
+// Splits content/ into dist/content-public and dist/content-internal
+// based on a `visibility` frontmatter field.
+
+import { readdirSync, statSync, mkdirSync, copyFileSync, readFileSync } from "node:fs";
+import { join, relative, dirname } from "node:path";
+import matter from "gray-matter";
+
+const SRC = "content";
+const TARGETS = {
+  public: "dist/content-public",
+  internal: "dist/content-internal",
+};
+
+function walk(dir) {
+  for (const entry of readdirSync(dir)) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      walk(full);
+      continue;
+    }
+    if (!full.endsWith(".md") && !full.endsWith(".mdx")) continue;
+
+    const { data } = matter(readFileSync(full, "utf8"));
+    const visibility = data.visibility ?? "public";
+
+    for (const [target, outDir] of Object.entries(TARGETS)) {
+      if (target === "public" && visibility !== "public") continue;
+      const dest = join(outDir, relative(SRC, full));
+      mkdirSync(dirname(dest), { recursive: true });
+      copyFileSync(full, dest);
+    }
+  }
+}
+
+walk(SRC);
+```
+
+A page just needs `visibility: beta` in its frontmatter to drop out of the public tree while still building normally into the internal one.
+
+## Approach #2: Fully private
+
+Everything above hides content from a render. This section is about content that truly cannot be reached by anyone who shouldn't see it, which is what Upkeep actually needed at that time. It's also where automating the boring parts pays off most, since the entire point is removing the manual steps that turn into leaks or missed deadlines.
+
+### One-way sync private fork
+
+A private repo with tightly restricted permissions is the one method here that gives a guarantee instead of an honor system. If someone doesn't have access to the repo, they cannot read the page, and there's no URL to guess or cached copy to worry about.
+
+nginx, the open source web server maintained by F5, runs a public version of [exactly this](https://github.com/nginx/documentation/blob/main/documentation/closed-contributions.md). Their public docs repo is where writing happens by default, and it syncs one way into a separate internal repo used only for content that can't be public yet. Two remotes on the same local checkout connect them: `origin` for the public repo, and a second remote pointing at the private one.
+
+The setup has two distinct directions of sync, and mixing them up is the most common reason private-fork setups fall apart. Public content needs to flow into the private repo continuously, since writers there need current material to draft against. Finished pages travel the other way only once, when they are ready to ship. Someone wires up the first direction, forgets the second exists, and ends up resolving merge conflicts by hand months later. Both directions are worth scripting before you need them.
+
+The steps below cover the full setup: connecting the two repos, adding the automation, and running the daily writing loop from branching through promotion.
+
+<Steps>
+<Step>
+### Create the private repo on GitHub
+
+Go to GitHub, create a new repository, name it something like `docs-staging`, and set visibility to Private. No GitHub Pages setup is needed. It is a place for branches and pull requests that only invited collaborators can see.
+</Step>
+
+<Step>
+### Verify your SSH key
+
+Before adding a second remote, confirm your local machine can authenticate with GitHub:
+
+```bash
+ssh -T git@github.com
+```
+
+You should see `Hi yourname! You've successfully authenticated`. If you get `Permission denied (publickey)` instead, generate and add a key:
+
+```bash
+cd ~/.ssh
+ssh-keygen -t ed25519 -C "your@email.com"
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+cat ~/.ssh/id_ed25519.pub
+```
+
+Running `ssh-keygen` from `~/.ssh` writes the key files to that directory. Copy the output of `cat`, go to GitHub Settings → SSH and GPG keys → New SSH key, paste it, and save. Run `ssh -T git@github.com` again to confirm authentication works before continuing.
+</Step>
+
+<Step>
+### Add the staging remote and seed it
+
+From your existing local clone of the public docs repo, add the private repo as a second remote and push the current public history into it:
+
+```bash
+git remote add staging git@github.com:yourname/my-docs-staging.git
+git push staging master
+```
+
+Run `git remote -v` to confirm both remotes are registered: `origin` pointing at the public repo and `staging` pointing at the private one.
+</Step>
+
+<Step>
+### Add the sync workflow
+
+Still on `master`, create `.github/workflows/sync-from-public.yml`. This workflow pulls the latest public content into `staging/master` every morning and can also be triggered manually:
+
+```yaml
+# .github/workflows/sync-from-public.yml
+name: Sync from public docs
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Pull in the latest public content
+        run: |
+          git remote add public https://github.com/my-docs-public/docs.git
+          git fetch public master
+          git checkout master
+          git merge public/master --no-edit
+          git push origin master
+```
+
+This workflow reads from a public repo, so no secrets are required. Commit and push it to `staging`:
+
+```bash
+git add .github/workflows/sync-from-public.yml
+git commit -m "add sync workflow"
+git push staging master
+```
+</Step>
+
+<Step>
+### Add the promote workflow and its token
+
+The promote workflow copies a finished page from the private repo into the public one and opens a pull request. It requires write access to the public repo, so create a fine-grained personal access token first.
+
+Go to GitHub Settings → Developer settings → Personal access tokens → Fine-grained tokens → generate new token. Set the resource owner to your account, restrict access to the public docs repo only, grant read and write on Contents and Pull requests, and generate your token.
+
+Copy the token and save it as a secret named `PUBLIC_REPO_PUSH_TOKEN` on the private repo under Settings → Secrets and variables → Actions.
+
+Still on `master`, create `.github/workflows/promote.yml`:
+
+```yaml
+# .github/workflows/promote.yml
+name: Promote page to public docs
+on:
+  workflow_dispatch:
+    inputs:
+      path:
+        description: "Path to the file, relative to content/"
+        required: true
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout private docs
+        uses: actions/checkout@v4
+        with:
+          path: private
+
+      - name: Checkout public docs
+        uses: actions/checkout@v4
+        with:
+          repository: acme/docs
+          token: ${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}
+          path: public
+
+      - name: Copy the approved page across
+        run: |
+          mkdir -p "public/content/$(dirname "${{ inputs.path }}")"
+          cp "private/content/${{ inputs.path }}" "public/content/${{ inputs.path }}"
+          sed -i '/^visibility: staging-only$/d' "public/content/${{ inputs.path }}"
+
+      - name: Open a PR against the public repo
+        working-directory: public
+        env:
+          GH_TOKEN: ${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}
+        run: |
+          git checkout -b "promote/${{ inputs.path }}"
+          git add "content/${{ inputs.path }}"
+          git commit -m "Promote ${{ inputs.path }} from private staging"
+          git push origin "promote/${{ inputs.path }}"
+          gh pr create --title "Promote: ${{ inputs.path }}" \
+            --body "copied from the private staging repo, merge when the feature ships" \
+            --base master
+```
+
+Commit and push it to `staging`:
+
+```bash
+git add .github/workflows/promote.yml
+git commit -m "add promote workflow"
+git push staging master
+```
+</Step>
+
+<Step>
+### Create your feature branch
+
+With the workflows in place, branch off `staging/master` using a prefix that keeps private branches visually distinct from public ones:
+
+```bash
+git fetch staging
+git checkout -b staging/new-feature staging/master
+```
+
+All commits, pull requests, and preview deploys stay on this branch against the `staging` remote. Nothing is pushed to `origin` until the page is ready to ship.
+</Step>
+
+<Step>
+### Write, commit, and push
+
+Make your edits, then push to the private repo:
+
+```bash
+git add .
+git commit -m "draft new-feature page"
+git push staging staging/new-feature
+```
+</Step>
+
+<Step>
+### Open a pull request on staging
+
+Open a pull request against `staging/master` on the private repo. This is where reviewers leave comments, request changes, and sign off before the page ships. Because the private repo is only accessible to invited collaborators, the full review can happen there without any of the content being visible publicly.
+
+Once all reviewers have approved, close the pull request without merging. The page does not land on `staging/master` directly. Promotion to the public repo is what ships it.
+</Step>
+
+<Step>
+### Sync with origin before promoting
+
+Before squashing and promoting, fetch any changes that merged into the public repo while you were writing:
+
+```bash
+git fetch origin
+git rebase origin/master
+```
+
+This ensures the promoted commit applies cleanly to the current public history and avoids conflicts in the pull request.
+</Step>
+
+<Step>
+### Squash your commits
+
+Squash all commits on the branch into one before the page ships publicly. A staging branch carries its full commit history when promoted, including any WIP messages or internal notes:
+
+```bash
+git rebase -i origin/master
+```
+
+An editor opens listing your commits. Press `i` to enter insert mode. Drop the workflow commits and squash the content ones:
+
+```bash
+d f930d95 # add sync workflow
+d 5e3f2d5 # add promote workflow
+pick 29a2c46 # add new-feature
+s 9b8175b # update new-feature
+```
+
+Press `Esc`, then type `:wq` and hit Enter. A second editor opens with both commit messages. Delete everything and write a single clean message, then `Esc`, `:wq`, Enter again. If the branch has only one content commit, use `pick` instead of `s` and skip the second editor.
+
+Next, push the updated branch:
+
+```bash
+git push staging staging/new-feature --force-with-lease
+```
+</Step>
+
+<Step>
+### Close the staging pull request
+
+Once reviewers have approved, close the pull request on the staging repo without merging. The page does not land on `staging/master`. Rebase from `origin/master`, squash your commits, and run the promote workflow to ship it.
+</Step>
+
+<Step>
+### Run the promote workflow
+
+Go to the private repo on GitHub, open Actions, select Promote page to public docs, and click Run workflow. Enter the file path relative to `content/`, for example `new-feature/index.mdx`, and run it.
+
+The workflow copies the file into the public repo and opens a pull request there. Merging that pull request is what ships the page and triggers the public site's deploy workflow.
+
+Before using this on a real launch, run it once with a throwaway file to verify the token scope and paths are correct, then delete the test file from both repos.
+</Step>
+</Steps>
+
+### Deployment gating
+
+People other than your own writers usually need to read the draft before launch: support, sales, a handful of design partners. A raw markdown file in a private GitHub repo is a rough reading experience for them, so this is where deployment gating comes in.
+
+Deployment gating means standing up a complete second site straight from the private repo's branch and putting something real between it and casual visitors, while production keeps deploying publicly as normal. This is roughly what I built for Upkeep, a second deployment of the docs site pointed at the private branch that reviewers could actually click through instead of reading a raw diff.
+
+- Cloudflare Pages can do this for close to free. Every branch already gets its own preview URL, and Cloudflare Access can sit in front of just that one subdomain instead of production, free for up to 50 users, with proper login and nothing extra to host or run. It's not a setup I've seen on a web3 docs site, but it's worth knowing it exists.
+
+- Netlify covers similar ground, though the path has shifted recently. Password protection used to be available on every account, letting you set a shared password or require visitors to log into your Netlify team. Now that feature lives on the Pro plan and above. On the free tier, Netlify's own docs include a template for a small Edge Function that checks a password against an environment variable, which works without a paid plan since Edge Functions are part of the free tier too.
+
+- If you'd rather not depend on a specific platform's feature, the generic version is just a password check sitting in front of whatever serves the files. With nginx, that's a single `.htpasswd` file. If real single sign-on matters more than a shared password, `oauth2-proxy` sits in front of the same server and checks against whatever identity provider the team already uses.
+
+- Mintlify already builds a version of this straight into the platform. Switching on Partial Authentication in the dashboard puts every page behind a login by default, except whichever ones are explicitly marked `public: true` at the page or group level. A Pro plan gets a single shared password; Enterprise adds OAuth, JWT, and login restricted to people inside the same Mintlify organization. It's the same idea as a gated preview deployment, just with the gate built into the hosting instead of bolted on next to it.
+
+- ReadMe and GitBook have similar solution to Mintlify. The tradeoff is the same across all of them: a polished editor, a review workflow, and real access control with almost no engineering effort, in exchange for a subscription and some dependency on their format. If open tooling matters because of budget or a self-hosting requirement, pairing a private staging repo with automated sync and promotion with a gated preview deployment gets most of the same practical outcome, for the price of a GitHub Action and a free Cloudflare account.
+
+### Per-request access control
+
+Fumadocs runs on Next.js, which can render a page per request instead of only at build time. In theory that means skipping a second deployment entirely: filtering the content source by a permission field, checking the visitor's identity when the page actually renders, and returning a real 404 instead of the page if they don't have access.
+
+In practice, two things narrow how often that actually applies:
+1. The first is that it only works while running Next.js as a live server, on something like Vercel or a self-hosted Node process, rather than exporting the site as static HTML, the way most docs sites actually deploy, including this website. A static export has no request for anything to check against.
+2. The second matters more: the 404 only hides the rendered page, not the file behind it. That file still has to live somewhere, and if that somewhere is the same public docs repo as everything else, anyone who looks at the repository itself can read it no matter what the loader does at request time. The live site might return a clean 404, but the repository never does.
+
+<Callout type="warn">
+This is the same problem the frontmatter trick had earlier in this post. A 404 at request time doesn't help if the markdown file is still sitting in a public git history.
+</Callout>
+
+The per-request version only earns its keep if the content source is also kept somewhere that isn't the public repo: a private database, a headless CMS, a separate private repo fetched at request time. At that point it stops being a Fumadocs-specific shortcut and turns into the private-staging-repo idea from earlier, just with one deployment instead of two.
+
+## Summary
+
+| Method | Privacy | Setup effort | Cost | Best fit |
+|---|---|---|---|---|
+| Frontmatter hiding (Docusaurus, Mintlify, Fumadocs) | Only if the source repo is private too | Low | Free | Tidying the nav, hiding from search, beta content you don't mind existing |
+| Disposable drafts (Notion, HackMD, Google Docs) | High until promoted | Low | Free to cheap | Early review only, never the final destination |
+| Private staging repo, synced and promoted automatically | High | Medium | Free | Full privacy needs, regular shipping cadence |
+| Gated preview deployment (Cloudflare Access, Netlify, reverse proxy) | High | Medium | Free to low | Non-engineers need a real, browsable preview |
+| Per-request access control (Fumadocs) | High, only if content also lives outside the public repo | Medium, plus a live server | Free | Teams already running Next.js as a live app, not a static export |
+| Managed platform auth (Mintlify, ReadMe, GitBook) | Medium to high, by plan tier | Very low | Paid for real auth | Little appetite for building this yourself |
+
+No method wins outright, since the two questions from the start of this post have different answers for different teams. For Upkeep specifically, the whole stack was simpler than the automated version described above: a private fork with a real preview for reviewers, merged by hand into the public repo a few hours before marketing's announcement.
+
+I've run that pattern repeatedly, and there's a decent chance the part I still do by hand, pulling fresh public content into the private fork and pushing finished pages back out, could be scripted the way nginx's own setup is. The part that's never been clean yet either way is the first sync: the very first time a private fork meets a public repo with months of separate history, the merge isn't automatic, and someone has to sit with it by hand once before any automation can take over.
+
+## Further reading
+
+- [nginx's process for closed contributions](https://github.com/nginx/documentation/blob/main/documentation/closed-contributions.md)
+- [Docusaurus content docs plugin (draft and unlisted frontmatter)](https://docusaurus.io/docs/api/plugins/@docusaurus/plugin-content-docs)
+- [Mintlify hidden pages](https://www.mintlify.com/docs/organize/hidden-pages)
+- [Mintlify authentication setup](https://www.mintlify.com/docs/deploy/authentication-setup)
+- [Fumadocs access control](https://www.fumadocs.dev/docs/guides/access-control)
+- [Netlify password protection](https://docs.netlify.com/manage/security/secure-access-to-sites/password-protection/)
