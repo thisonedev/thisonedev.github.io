@@ -3,8 +3,8 @@ info:
   version: 1.0.0
   title: Child chain API
   description: |
-    This is the documentation for child chain API.
-    Error codes are available in [html](https://github.com/omgnetwork/elixir-omg/blob/master/docs/api_specs/errors.md#error-codes-description) format.
+    The API for the child chain.
+    For a complete list of error codes, see the [error code documentation](https://github.com/omgnetwork/elixir-omg/blob/master/docs/api_specs/errors.md#error-codes-description).
   contact:
     name: OMG Network
     email: engineering@omg.network
@@ -25,7 +25,7 @@ paths:
     get:
       tags:
         - Alarm
-      summary: 'Provides alarms related to system memory, cpu and storage and application specific alarms.'
+      summary: 'Provide alarms related to system memory, CPU, and storage usage, as well as application-specific alarms'
       description: |
         **Note:** Service operator alarms.
       operationId: alarm_get
@@ -170,7 +170,7 @@ paths:
     get:
       tags:
         - Configuration
-      summary: Provides configuration values
+      summary: Provide configuration values
       description: |
         **Note:** Configuration values.
       operationId: configuration_get
@@ -282,9 +282,9 @@ paths:
     post:
       tags:
         - Transaction
-      summary: This endpoint submits a signed transaction to the child chain.
+      summary: Submit a signed transaction to the child chain
       description: |
-        Normally you should call the Watcher's Transaction - Submit instead of this. The Watcher's version performs various security and validation checks before submitting the transaction, so is much safer. However, if the Watcher is not available this version exists.
+        In most cases, use Submit endpoint instead of this one. The Watcher's version performs additional security and validation checks before submitting the transaction, making it safer. Use this endpoint only as a fallback when the Watcher is unavailable.
       operationId: submit
       requestBody:
         description: Signed transaction RLP-encoded to bytes and HEX-encoded to string
@@ -408,7 +408,7 @@ paths:
     post:
       tags:
         - Block
-      summary: This endpoint retrieves a specific block from child chain by its hash which was published on root chain.
+      summary: Retrieve a specific block from the child chain using the hash that was published on the root chain
       operationId: block_get
       requestBody:
         description: HEX-encoded hash of the block
@@ -534,10 +534,10 @@ paths:
     post:
       tags:
         - Fees
-      summary: This endpoint retrieves the list of fee tokens currently supported by the childchain and the current amount needed to perform a transaction.
+      summary: Retrieve the list of fee tokens currently supported by the child chain, along with the current amount needed to perform a transaction
       operationId: fees_all
       requestBody:
-        description: 'An optional array of currencies to filter, raises an error if one of the currencies is not supported.'
+        description: 'An optional array of currencies to filter by. Raises an error if one of the currencies is not supported.'
         required: false
         content:
           application/json:

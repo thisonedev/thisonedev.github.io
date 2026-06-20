@@ -3,8 +3,8 @@ info:
   version: 1.0.0
   title: Watcher Info API
   description: |
-    API specification of the Watcher's Informational Service
-    Error codes are available in [html](https://github.com/omgnetwork/elixir-omg/blob/master/docs/api_specs/errors.md#error-codes-description) format.
+    The API for the Watcher's Informational Service.
+    For a complete list of error codes, see the [error code documentation](https://github.com/omgnetwork/elixir-omg/blob/master/docs/api_specs/errors.md#error-codes-description).
   contact:
     name: OMG Network
     email: engineering@omg.network
@@ -34,7 +34,7 @@ paths:
     get:
       tags:
         - Alarm
-      summary: 'Provides alarms related to system memory, cpu and storage and application specific alarms.'
+      summary: 'Provide alarms related to system memory, CPU, and storage usage, as well as application-specific alarms'
       description: |
         **Note:** Service operator alarms.
       operationId: alarm_get
@@ -190,7 +190,7 @@ paths:
     get:
       tags:
         - Configuration
-      summary: Provides configuration values
+      summary: Provide configuration values
       description: |
         **Note:** Configuration values.
       operationId: configuration_get
@@ -306,7 +306,7 @@ paths:
     post:
       tags:
         - Account
-      summary: Returns the balance of each currency for the given account address.
+      summary: Return the balance of each currency for the given account address
       operationId: account_get_balance
       requestBody:
         description: HEX-encoded address of the account and pagination fields
@@ -440,7 +440,7 @@ paths:
     post:
       tags:
         - Account
-      summary: Gets all utxos belonging to the given address.
+      summary: Get all utxos belonging to the given address
       operationId: account_get_utxos
       requestBody:
         description: HEX-encoded address of the account and pagination fields
@@ -621,7 +621,7 @@ paths:
     post:
       tags:
         - Account
-      summary: Gets a list of transactions for given account address.
+      summary: Get a list of transactions for the given account address
       operationId: account_get_transactions
       requestBody:
         description: 'Account address, block number and other criteria'
@@ -934,10 +934,10 @@ paths:
     post:
       tags:
         - Block
-      summary: Retrieves a single block for the given block number.
+      summary: Retrieve a single block for the given block number
       description: |
-        Intended for operations requiring info for a specific block only.
-        Returns a single block object for the given block number. The returned object includes transaction count but not associated transactions - for which you can use transaction.all with blknum in the request body.
+        Use this endpoint when you only need information about a specific block.
+        Returns a single block object for the given block number. The returned object includes the transaction count but not the associated transactions. To retrieve those, use `/transaction.all` with `blknum` in the request body.
       operationId: block_get
       requestBody:
         description: Block number
@@ -1074,10 +1074,10 @@ paths:
     post:
       tags:
         - Block
-      summary: Gets all blocks (can be limited with various filters).
+      summary: Get all blocks (can be limited with various filters)
       description: |
-        Returns a list of blocks ordered by the highest block number first. Intended to be used for presenting an overview of most recent blocks.
-        Note: Due to eventual consistency nature of the informational API, blocks may later than deposits, exits, etc.
+        Returns a list of blocks ordered by the highest block number first. Use this endpoint to display an overview of the most recent blocks.
+        **Note:** Because the Informational API is eventually consistent, blocks might appear later than related deposits, exits, and other events.
       operationId: block_all
       requestBody:
         description: The supported request parameters for /block.all
@@ -1237,7 +1237,7 @@ paths:
     post:
       tags:
         - Deposit
-      summary: Gets a paginated list of deposit for the given address.
+      summary: Get a paginated list of deposits for the given address
       description: |
         Returns a list of deposits ordered by Ethereum height in descending order for the given address.
       operationId: deposit_all
@@ -1444,9 +1444,9 @@ paths:
     post:
       tags:
         - Transaction
-      summary: Gets all transactions (can be limited with various filters).
+      summary: Get all transactions (can be limited with various filters)
       description: |
-        Digests the details of the transaction, by listing the value of outputs, aggregated by currency. Intended to be used when presenting the little details about multiple transactions. For all details queries to `/transaction.get` should be made using the transaction's hash provided.
+        Returns a summarized list of transactions, with output values aggregated by currency. Use this endpoint to display a brief overview of multiple transactions. For full transaction details, query `/transaction.get` using the transaction's hash.
       operationId: transactions_all
       requestBody:
         description: 'Account address, block number and other criteria'
@@ -1759,12 +1759,12 @@ paths:
     post:
       tags:
         - Transaction
-      summary: Finds an optimal way to construct a transaction spending particular amount.
+      summary: Find an optimal way to construct a transaction that spends a specific amount
       description: |
-        Given token, amount and spender, finds spender's inputs sufficient to perform a payment. If also provided with receiver's address, creates and encodes a transaction.
+        Given a token, amount, and spender, finds the inputs needed to cover the payment. If you also provide a receiver's address, creates and encodes the transaction.
       operationId: createTransaction
       requestBody:
-        description: The description of transaction to be crafted.
+        description: The details of the transaction to create.
         required: true
         content:
           application/json:
@@ -2246,7 +2246,7 @@ paths:
     post:
       tags:
         - Transaction
-      summary: Gets a transaction with the given id.
+      summary: Get a transaction with the given ID
       operationId: transaction_get
       requestBody:
         description: Id (hash) of the transaction
@@ -2518,9 +2518,9 @@ paths:
     post:
       tags:
         - Transaction
-      summary: Sends EIP-712 formatted transaction to Child chain.
+      summary: Send an EIP-712-formatted transaction to the child chain
       description: |
-        Request to this method is the same as to Web3 `eth_signTypedData` with additional `signatures` array. The `/transaction.create` `typed_data` field can be used to prepare transaction. The same conditions are met as with security-critical `/transaction.submit`
+        A request to this method is equivalent to a Web3 `eth_signTypedData` request, with an additional `signatures` array. Use the `typed_data` field from `/transaction.create` to prepare the transaction. The same conditions apply as for the security-critical `/transaction.submit`.
       operationId: submit_typed
       requestBody:
         description: Transaction as for `eth_signTypedData` along with signatures
@@ -2836,10 +2836,10 @@ paths:
     post:
       tags:
         - Fees
-      summary: This endpoint retrieves the list of fee tokens currently supported by the childchain and the current amount needed to perform a transaction.
+      summary: Retrieve the list of fee tokens currently supported by the child chain, along with the current amount needed to perform a transaction
       operationId: fees_all
       requestBody:
-        description: 'An optional array of currencies to filter, raises an error if one of the currencies is not supported.'
+        description: 'An optional array of currencies to filter by. Raises an error if one of the currencies is not supported.'
         required: false
         content:
           application/json:
@@ -2987,9 +2987,9 @@ paths:
     post:
       tags:
         - Stats
-      summary: Retrieves network statistics
+      summary: Retrieve network statistics
       description: |
-        Retrieves transaction count, block count and average block interval, both for all time and the last 24 hours.
+        Retrieves the transaction count, block count, and average block interval, for both all time and the last 24 hours.
       operationId: stats_get
       responses:
         '200':

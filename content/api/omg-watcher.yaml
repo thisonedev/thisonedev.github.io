@@ -3,8 +3,8 @@ info:
   version: 1.0.0
   title: Watcher security-critical API
   description: |
-    API specification of the Watcher's security-critical Service
-    Error codes are available in [html](https://github.com/omgnetwork/elixir-omg/blob/master/docs/api_specs/errors.md#error-codes-description) format.
+    The API for the Watcher's security-critical service.
+    For a complete list of error codes, see the [error code documentation](https://github.com/omgnetwork/elixir-omg/blob/master/docs/api_specs/errors.md#error-codes-description).
   contact:
     name: OMG Network
     email: engineering@omg.network
@@ -33,7 +33,7 @@ paths:
     get:
       tags:
         - Alarm
-      summary: 'Provides alarms related to system memory, cpu and storage and application specific alarms.'
+      summary: 'Provide alarms related to system memory, CPU, and storage usage, as well as application-specific alarms'
       description: |
         **Note:** Service operator alarms.
       operationId: alarm_get
@@ -189,7 +189,7 @@ paths:
     get:
       tags:
         - Configuration
-      summary: Provides configuration values
+      summary: Provide configuration values
       description: |
         **Note:** Configuration values.
       operationId: configuration_get
@@ -303,9 +303,9 @@ paths:
     post:
       tags:
         - Status
-      summary: Returns information about the current state of the child chain and the watcher.
+      summary: Return information about the current state of the child chain and the watcher
       description: |
-        The most critical function of the Watcher is to monitor the ChildChain and report dishonest activity. The user must call the `/status.get` endpoint periodically to check. Any situation that requires the user to either exit or challenge an invalid exit will be included in the `byzantine_events` field.
+        The Watcher's most critical function is to monitor the child chain and report dishonest activity. Call the `/status.get` endpoint periodically to check for issues. Any situation that requires you to exit or challenge an invalid exit appears in the `byzantine_events` field.
       operationId: status_get
       responses:
         '200':
@@ -771,9 +771,9 @@ paths:
     post:
       tags:
         - Account
-      summary: Gets all utxos belonging to the given address.
+      summary: Get all utxos belonging to the given address
       description: |
-        **Note:** this is a performance intensive call and should only be used if the chain is byzantine and the user needs to retrieve utxo information to be able to exit. Normally an application should use the Informational API's [Account - Get Utxos](http://TODO) instead. This version is provided in case the Informational API is not available.
+        **Note:** This is a performance-intensive call. Use it only when the chain is byzantine and you need to retrieve utxo information to exit. In most cases, use the Informational API's [Account - Get Utxos](http://TODO) endpoint instead; this endpoint exists only as a fallback for when the Informational API is unavailable.
       operationId: account_get_exitable_utxos
       requestBody:
         description: HEX-encoded address of the account
@@ -918,8 +918,8 @@ paths:
     post:
       tags:
         - UTXO
-      summary: Gets challenge data for a given utxo exit.
-      description: Gets challenge data for a given utxo exit.
+      summary: Get challenge data for a given utxo exit
+      description: Returns the data needed to challenge a fraudulent exit for the given utxo, including the exit ID, input index, transaction bytes, and signature.
       operationId: utxo_get_challenge_data
       requestBody:
         description: 'Utxo position (encoded as single integer, the way contract represents them)'
@@ -1051,8 +1051,8 @@ paths:
     post:
       tags:
         - UTXO
-      summary: Gets exit data for a given utxo.
-      description: Gets exit data for a given utxo.
+      summary: Get exit data for a given utxo
+      description: Returns the data required to start a standard exit for the given utxo, including the transaction bytes and Merkle proof.
       operationId: utxo_get_exit_data
       requestBody:
         description: 'Utxo position (encoded as single integer, the way contract represents them)'
@@ -1177,8 +1177,8 @@ paths:
     post:
       tags:
         - Transaction
-      summary: Sends transaction to Child chain.
-      description: 'Watcher passes signed transaction to the child chain only if it''s secure, e.g. Watcher is fully synced, all operator blocks have been verified, transaction doesn''t spend funds not yet mined...'
+      summary: Send a transaction to the child chain
+      description: 'The Watcher forwards the signed transaction to the child chain only if it determines the transaction is secure - for example, that the Watcher is fully synced, all operator blocks have been verified, and the transaction does not spend funds that have not yet been mined.'
       operationId: submit
       requestBody:
         description: Signed transaction RLP-encoded to bytes and HEX-encoded to string
@@ -1302,9 +1302,9 @@ paths:
     post:
       tags:
         - InFlightExit
-      summary: Gets exit data for an in-flight exit.
+      summary: Get exit data for an in-flight exit
       description: |
-        Exit data are arguments to `startInFlightExit` root chain contract function.
+        Returns the exit data required as arguments to the `startInFlightExit` root chain contract function.
       operationId: in_flight_exit_get_data
       requestBody:
         description: In-flight transaction bytes body
@@ -1446,8 +1446,8 @@ paths:
     post:
       tags:
         - InFlightExit
-      summary: Returns a competitor to an in-flight exit.
-      description: Note that if the competing transaction has not been put into a block `competing_tx_pos` and `competing_proof` will not be returned.
+      summary: Return a competitor to an in-flight exit
+      description: Note that if the competing transaction has not been included in a block, `competing_tx_pos` and `competing_proof` are not returned.
       operationId: in_flight_exit_get_competitor
       requestBody:
         description: In-flight transaction bytes body
@@ -1592,8 +1592,8 @@ paths:
     post:
       tags:
         - InFlightExit
-      summary: Proves transaction is canonical.
-      description: 'To respond to a challenge to an in-flight exit, this proves that the transaction has been put into a block (and therefore is canonical).'
+      summary: Prove that a transaction is canonical
+      description: 'Responds to a challenge against an in-flight exit by proving that the transaction has been included in a block, and is therefore canonical.'
       operationId: in_flight_exit_prove_canonical
       requestBody:
         description: In-flight transaction bytes body
@@ -1717,8 +1717,8 @@ paths:
     post:
       tags:
         - InFlightExit
-      summary: Gets the data to challenge an invalid input piggybacked on an in-flight exit.
-      description: 'To respond to invalid piggybacked input in non-canonical in-flight transaction provides data needed to challenge it, e.g. transaction that spent this input and signature.'
+      summary: Get the data to challenge an invalid input piggybacked on an in-flight exit
+      description: 'Returns the data needed to challenge an invalid piggybacked input on a non-canonical in-flight transaction, including the transaction that spent the input and its signature.'
       operationId: in_flight_exit_get_input_challenge_data
       requestBody:
         description: In-flight transaction bytes and invalid input index
@@ -1861,8 +1861,8 @@ paths:
     post:
       tags:
         - InFlightExit
-      summary: Gets the data to challenge an invalid output piggybacked on an in-flight exit.
-      description: 'To respond to invalid piggybacked output in canonical in-flight transaction provides data needed to challenge it, e.g. in-flight transaction inclusion proof, transaction that spent this output and signature.'
+      summary: Get the data to challenge an invalid output piggybacked on an in-flight exit
+      description: 'Returns the data needed to challenge an invalid piggybacked output on a canonical in-flight transaction, including the inclusion proof for the in-flight transaction, the transaction that spent the output, and its signature.'
       operationId: in_flight_exit_get_output_challenge_data
       requestBody:
         description: In-flight transaction bytes and invalid output index
