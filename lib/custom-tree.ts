@@ -173,6 +173,12 @@ export const customTree: Node[] = [
     icon: resolveIcon('Scroll'),
   },
   {
+    name: 'How to Manage a Watcher',
+    url: '/portfolio/omg-network/manage-watcher',
+    type: 'page',
+    icon: resolveIcon('Scroll'),
+  },
+  {
     name: 'How to Register Upkeep',
     url: '/portfolio/chainlink/register-upkeep',
     type: 'page',
