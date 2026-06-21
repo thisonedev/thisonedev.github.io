@@ -9,16 +9,6 @@ export const customTree: Node[] = [
     icon: resolveIcon('House'),
   },
   {
-    type: 'separator',
-    name: 'Getting started',
-  },
-  {
-    name: 'Introduction',
-    url: '/portfolio/intro',
-    type: 'page',
-    icon: resolveIcon('DoorOpen'),
-  },
-  {
   type: 'separator',
   name: 'API References',
   },
