@@ -40,21 +40,21 @@ The Web Wallet currently supports two environments:
 
 You can configure the preferred environment in your Web3 wallet as follows:
 
-![omg-1](../assets/omg-1.png)
+![omg-1](../../images/omg-1.png)
 
 There are 3 methods to connect with the Web Wallet. Feel free to use the one you prefer the most:
 
-![omg-2](../assets/omg-2.png)
+![omg-2](../../images/omg-2.png)
 
 ## Ledger
 
 If you want to sign transactions with a Ledger hardware wallet, choose Browser Wallet as your connection option. This will prompt a popup to verify that you're connected to Ledger. Connect the device and follow the required steps, then click YES.
 
-![omg-3](../assets/omg-3.png)
+![omg-3](../../images/omg-3.png)
 
 Make sure to allow contract data in transactions in your Ethereum application and keep that application opened as follows:
 
-![omg-4](../assets/omg-4.png)
+![omg-4](../../images/omg-4.png)
 
 To confirm your actions or change values in the settings, press both of the buttons with your fingers as shown above.
 
@@ -80,17 +80,17 @@ There are several ways to fund your ETH wallet:
 
 After you fund your Web3 wallet, your ETH rootchain balance in the Web Wallet should be the same, as your balance in MetaMask or another Web3 wallet you are using:
 
-![omg-5](../assets/omg-5.png)
+![omg-5](../../images/omg-5.png)
 
 ### 1.2 Make an ETH Deposit
 
 To make an ETH deposit, click the DEPOSIT button and fill in the amount as follows:
 
-![omg-6](../assets/omg-6.png)
+![omg-6](../../images/omg-6.png)
 
 Next, press DEPOSIT and confirm the transaction in the opened popup. After it's confirmed you should see a pending deposit in your Deposits history as follows:
 
-![omg-7](../assets/omg-7.png)
+![omg-7](../../images/omg-7.png)
 
 Deposits on the OMG Network require to pass a deposit finality period (currently 10 blocks) before the funds are accepted and can be used on the network safely. After a successful deposit, your childchain balance should be updated. This will also create a deposit UTXO validating that you have ETH on the OMG Network.
 
@@ -98,31 +98,31 @@ Deposits on the OMG Network require to pass a deposit finality period (currently
 
 The process for depositing ERC20 into the OMG Network is very similar to an ETH deposit. For this example, we will use TUSDT token. To make a deposit, click the DEPOSIT button and choose the ERC20 tab. Fill in the amount of tokens you want to deposit and a smart contract of a defined token as follows:
 
-![omg-8](../assets/omg-8.png)
+![omg-8](../../images/omg-8.png)
 
 This step will differ from the ETH deposit, as your Web3 wallet will pop up twice. The first popup will ask you to approve the deposit, the second — to confirm the actual deposit transaction. After you confirm both of the popups, you should see a pending deposit in your Deposits history. If a deposit is successful, your childchain balance should be updated as follows:
 
-![omg-9](../assets/omg-9.png)
+![omg-9](../../images/omg-9.png)
 
 If you're doing a deposit via Ledger, you should follow the same steps as described above. However, you will also need to review and approve deposit approval and deposit transaction on your hardware device. Below you can see an example of deposit approval:
 
-![omg-10](../assets/omg-10.png)
+![omg-10](../../images/omg-10.png)
 
 ### 2. Make a Transaction
 
 Now that you have funds on the OMG Network, you can make your first transaction. First, click on the Transfer button and fill in the recipient's address and the amount of ETH or ERC20 tokens you want to send as follows:
 
-![omg-11](../assets/omg-11.png)
+![omg-11](../../images/omg-11.png)
 
 Second, press the TRANSFER button and confirm the transaction in the opened popup as follows:
 
-![omg-12](../assets/omg-12.png)
+![omg-12](../../images/omg-12.png)
 
 Once the transaction is confirmed, you can view its details in the block explorer. After a successful deposit, your childchain balance should be updated.
 
 For sending a transaction via Ledger follow the steps above, then sign the transaction with your device as follows:
 
-![omg-13](../assets/omg-13.png)
+![omg-13](../../images/omg-13.png)
 
 ### 3. Withdraw Funds
 
@@ -132,21 +132,21 @@ You've successfully deposited and made a transfer to the OMG Network. If you wan
 
 To start an exit, press the EXIT button and choose one of the UTXO you want to exit as follows:
 
-![omg-14](../assets/omg-14.png)
+![omg-14](../../images/omg-14.png)
 
 > Note, you can exit only 1 UTXO at a time. If you need to exit more funds than the value of a particular UTXO, you should merge them first.
 
 If a defined token hasn't been exited before, you'll need to add it to the exit queue as follows:
 
-![omg-15](../assets/omg-15.png)
+![omg-15](../../images/omg-15.png)
 
 Next, press SUBMIT EXIT and confirm the transaction in the opened popup as follows:
 
-![omg-16](../assets/omg-16.png)
+![omg-16](../../images/omg-16.png)
 
 Below you can see an example of exit approval on Ledger:
 
-![omg-17](../assets/omg-17.png)
+![omg-17](../../images/omg-17.png)
 
 ### 3.2 Process an Exit
 
@@ -154,11 +154,11 @@ To prevent any malicious activity on the network, each exit goes through the Cha
 
 To start an exit, press the Process Exit button near exit id as follows:
 
-![omg-18](../assets/omg-18.png)
+![omg-18](../../images/omg-18.png)
 
 After, confirm the transaction in the opened popup as follows:
 
-![omg-19](../assets/omg-19.png)
+![omg-19](../../images/omg-19.png)
 
 Most of the time, you're not the first to exit a defined token. That's why you may need to select the number of exits you want to process before you process your exit. As a general rule, use the maximum number that is offered to you. Otherwise, your exit may not be processed.
 

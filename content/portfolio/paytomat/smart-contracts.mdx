@@ -17,7 +17,7 @@ At the moment the revenue is generated during credit card withdrawals and crypto
 
 We suggest you go through a smart contract by yourself to become more familiar with how it works. To do that you can use one of the blockchain explorers that support smart contract operations: EOSPark, Bloks.io. Regardless of the interface, you’re using, you’ll need to find a paytomat4eos EOS account and switch to Contract/Contract Details tab. Meanwhile, you can read detailed explanatory info on how to read the data that you see in those explorers.
 
-![ptm-16](../assets/ptm-16.png)
+![ptm-16](../../images/ptm-16.png)
 
 Here are the core functionalities of a Revenue Smart Contract:
 
@@ -44,7 +44,7 @@ Each EOS smart contract consists of a table that contains data, and actions that
 
 - amount — the total amount of PTI that were purchased from an exchange using this smart contract during the revenue distribution.
 
-![ptm-17](../assets/ptm-17.png)
+![ptm-17](../../images/ptm-17.png)
 
 2. Cashback Table — shows cashback info:
 
@@ -52,7 +52,7 @@ Each EOS smart contract consists of a table that contains data, and actions that
 
 - rate — the percentage of cashback given to the user, the value varies from 0.1 (10%) up to 0.9 (90%). In other words, the more PTI you have on your balance, the more cashback from your operation you’ll receive.
 
-![ptm-18](../assets/ptm-18.png)
+![ptm-18](../../images/ptm-18.png)
 
 This one requires an example.
 
@@ -78,7 +78,7 @@ If the user doesn’t have an EOS account, the cashback will not be sent to him 
 
 - trading.sec — frequency of revenue balance check, currently set to 48 sec. This means that RSC will check every 48 seconds whether it needs to purchase PTI from an exchange.
 
-![ptm-19](../assets/ptm-19.png)
+![ptm-19](../../images/ptm-19.png)
 
 4. Rates Table — shows the correspondent amount of PTI in particular cryptocurrency:
 
@@ -86,7 +86,7 @@ If the user doesn’t have an EOS account, the cashback will not be sent to him 
 
 - rate_to_eos — the correspondent amount of EOS in 1 unit of this particular cryptocurrency, the information is updated every 5 minutes.
 
-![ptm-20](../assets/ptm-20.png)
+![ptm-20](../../images/ptm-20.png)
 
 ### Paytomat Revenue Smart Contract (RSC). Actions
 
@@ -102,6 +102,6 @@ If the user doesn’t have an EOS account, the cashback will not be sent to him 
 
 - setrates — executes every 5 minutes to set up EOS exchange rates of all cryptocurrencies.
 
-![ptm-21](../assets/ptm-21.png)
+![ptm-21](../../images/ptm-21.png)
 
 There’s a lot more to show here but it should be enough for you to get familiar with how Paytomat is implementing EOS smart contracts. Overall the development experience is very comforting and allows us to accept bigger challenges that can improve our product even faster. Let us know what you think about such posts, we believe they can bring lots of value to our audience.

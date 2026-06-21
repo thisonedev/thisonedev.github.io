@@ -9,7 +9,7 @@ import { Steps, Step } from 'fumadocs-ui/components/steps';
 
 The problem with most OpenAPI generators is that they assume you're building a traditional documentation portal. Every operation gets its own page, its own route, and its own spot in the sidebar. That works well when you're documenting a large API and developers are usually searching for a specific endpoint. It doesn't work nearly as well when you want to present an API as a cohesive product.
 
-![02](./assets/02.png)
+![02](../images/blog-02.png)
 
 I ran into this while building a portfolio site with Fumadocs. Instead of spreading endpoints across dozens of pages, I wanted a single reference page that displayed the entire specification in one place. The layout I was after had documentation on the left, code samples and an interactive playground on the right, and every endpoint available without navigating between routes.
 
@@ -19,7 +19,7 @@ The approach ended up being surprisingly flexible. Although I originally created
 
 From there, the challenge became figuring out how to turn a route-per-operation system into a single-page API reference without fighting Fumadocs' existing architecture.
 
-![03](./assets/03.png)
+![03](../images/blog-03.png)
 
 My own use case is six files across two projects: three Hyperliquid APIs ([perps](/portfolio/api/hyperliquid-perps/), [spot](/portfolio/api/hyperliquid-spot/), [exchange](/portfolio/api/hyperliquid-exchange/)) and three OMG Network APIs ([info](/portfolio/api/omg-info/), [operator](/portfolio/api/omg-operator/), [watcher](/portfolio/api/omg-watcher/)). Each one needed its own page at a clean URL, with the two-column layout and the interactive playground that come standard with Fumadocs OpenAPI.
 

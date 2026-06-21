@@ -52,7 +52,7 @@ Making transfers on the OMG Network has the same behavior as on other networks, 
 *Implementation details:*
 When you send a transaction, you will often use `account/get_utxos` endpoint to get information about the latest UTXOs. Current implementation returns only confirmed UTXOs that are not used for the pending transaction. One of the ways to mitigate this limitation is to block/disable your wallet UI to prevent sending other transactions until the current transaction is confirmed. Otherwise, you may encounter a `UTXO not found` issue., Alternatively, you can keep track of all of the UTXOs used for your transactions but this will create additional complexity for your application.
 
-![omg-wallet-1](../assets/omg-wallet-1.png)
+![omg-wallet-1](../../images/omg-wallet-1.png)
 
 ##### 2.1.4 Make Withdrawals (Exits)
 Using OMG Network as a value transfer layer offers a faster and cheaper alternative if your work requires frequent operations on the Ethereum network. Most of the time you will hold a certain amount of assets on the OMG Network, and periodically withdraw your funds back to Ethereum. This is the most complicated technical and UX flow. You can implement exits functionality using [Start a Standard Exit guide](Start a Standard Exit guide).,
@@ -67,32 +67,32 @@ Layer 2 mobile UI and UX can be challenging and confusing, thus our job is to ma
 **Network Distinction**
 It's a good practice to have a clear visual distinction between the Ethereum path and the OMG Network path. It's not recommended to display token's balance on both networks together. Setting an obvious separate path helps users to interact with tokens on each network. Additionally, you can set up a switch action (e.g. button) that will help to switch between OMG Network and Ethereum.
 
-![omg-wallet-2](../assets/omg-wallet-2.png)
+![omg-wallet-2](../../images/omg-wallet-2.png)
 
 **Deposits**
 1.  A user needs to have some ETH in their cryptocurrency wallet to cover the deposit fee. It's recommended to encourage users to deposit fee tokens first and inform about the fee model upfront. This can be mentioned in the tour/onboarding screens or your main screen as follows:,
-![omg-wallet-3](../assets/omg-wallet-3.png)
+![omg-wallet-3](../../images/omg-wallet-3.png)
 2.  Deposit is not as frequent operation as transfer, thus you may not need to add it to the quick actions panel. However, it has to be easily accessible and people should be aware of this functionality through a dedicated menu, intuitive UX flows, or onboarding.
-![omg-wallet-4](../assets/omg-wallet-4.png)
+![omg-wallet-4](../../images/omg-wallet-4.png)
 3.  The OMG Network has a different fee amount for different types of operations, including deposit fee, transfer fee, exit fee, and exit bond. Make sure to be explicit about those, as well as mention if the fee has a flat rate or dynamic rate. You might also set a fee with the highest amount as a default option., Additionally, you may mention that the transfer fee is charged in **OMG token**, the rest of the fees are in **ETH**.
-![omg-wallet-5](../assets/omg-wallet-5.png)
+![omg-wallet-5](../../images/omg-wallet-5.png)
 
 **Transfers**
 1.  It might be confusing which network you're using while making a transfer. It's recommended to distinguish between Ethereum and OMG Network with different colors, labels, icons, etc. according to your brand book.
-![omg-wallet-6](../assets/omg-wallet-6.png)
+![omg-wallet-6](../../images/omg-wallet-6.png)
 2.  It's a good practice to set a default `Scan QR code` button for the network a user is currently on (Ethereum or OMG). It's not recommended to use a global scan as it creates an extra decision for a user to make. If possible, have a separate flow for each of the networks to create a clear and consistent association and mental model for a particular user.,
-![omg-wallet-7](../assets/omg-wallet-7.png)
+![omg-wallet-7](../../images/omg-wallet-7.png)
 3.  Before making a transaction to an exchange or custodian wallet, ensure that the provider is already on the OMG Network. This can be accomplished by providing a validation message with corresponding color and text message.
 4.  It is possible to send existing funds on the OMG Network to any **non-custodial Ethereum address**. Thus, make sure to inform your users of such a possibility. The funds can be easily accessed with any OMG Network compatible wallet afterward.,
 5.  It's a good practice to have a clear distinction in transaction history for both Ethereum and OMG Network.
-![omg-wallet-8](../assets/omg-wallet-8.png)
+![omg-wallet-8](../../images/omg-wallet-8.png)
 
 **Withdrawals**
 1.  Make sure to inform withdrawal condition before allowing a user to proceed with exit submission.
-![omg-wallet-9](../assets/omg-wallet-9.png)
+![omg-wallet-9](../../images/omg-wallet-9.png)
 2.  Each withdrawal has to be processed separately. That's why suggesting your users merging UTXOs first is a great UX pattern. Note, you can't mix different ERC20 tokens during a single UTXO merge so plan your UI accordingly to match this behavior.
 3.  A good practice for Layer 2 UX is to notify users (via both UI and push notification) when the challenge period has already passed and you can withdraw your funds back to the Ethereum network.
-![omg-wallet-10](../assets/omg-wallet-10.png)
+![omg-wallet-10](../../images/omg-wallet-10.png)
 
 ### 3. Setup a Watcher
 Watcher is a service that guarantees data availability, secures the network, and allows to maintain the trustlessness of the OMG Network. It's recommended for every client to run a separate Watcher instance to rely on their own information source about the incoming deposits, transactions, exits, and byzantine events that happen on the OMG Network.

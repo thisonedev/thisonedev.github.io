@@ -95,7 +95,7 @@ The proposed solution fulfills the following security criteria:
 ## 2. Proposed Solution / Design
 ### 2.1 Demo Application Architecture
 
-![cm-1](../assets/cm-1.png)
+![cm-1](../../images/cm-1.png)
 
 ##### Community Points Client
 We are utilizing the web browser as the user interface for this demonstration due to the simplicity of integration with current ecosystem tooling. The currently supported browsers are Brave and Chrome. Here are different components to the interface:
@@ -140,11 +140,11 @@ This is the settlement layer of community points transactions as well as how the
 
 1. Display username and balance
 
-![cm-2](../assets/cm-2.png)
+![cm-2](../../images/cm-2.png)
 
 2. Make a fee-less transaction
 
-![cm-3](../assets/cm-3.png)
+![cm-3](../../images/cm-3.png)
 
 ##### Application Flow
 1. A user goes to a subreddit that supports community points (e.g. r/OMGnetwork).
@@ -196,7 +196,7 @@ POST /cancel-relayed-tx
 ##### Views
 - **Main View**: The main view displays the name of the community points page (e.g. subreddit), the wallet address, and the current balance of the token that represents this particular Community Points system. A user should be able to copy the address by selecting it or clicking the copy button near the address. Additionally, the view contains Transfer, History, and Merch tabs that represent corresponding data or actions. By default, a selected tab is set to Transfer.
 - **Transfer View**: Each user should be able to transfer funds to another user. One should put an amount and a recipient address that can represent a username (e.g. subreddit account name) or an Ethereum address, and confirm the transaction with a Transfer button. The username should be searchable.
-![cm-4](../assets/cm-4.png)
+![cm-4](../../images/cm-4.png)
 - **History View**: The History View contains a list of transaction history for a token that represents a defined points system, in which the user is currently located (e.g. r/OMGnetwork subreddit). Each transaction item includes:
     - An icon that represents sending or receiving of funds.
     - Sent or Received message for a corresponding transaction type.
@@ -205,11 +205,11 @@ POST /cancel-relayed-tx
     - The amount and token symbol.
     - A copy button that copies the recipient or sender.
     - Link to blockchain explorer (Rinkeby, Ropsten, or Mainnet).
-![cm-5](../assets/cm-5.png)
+![cm-5](../../images/cm-5.png)
 - **Merch View**: The Merch View contains a list of digital goods (e.g. flair) a user can purchase. Each item should have its own icon and price. Each purchase is associated with certain metadata that defines a possessed item and implies the burning of tokens (sending tokens to non-recoverable address).
-![cm-6](../assets/cm-6.png)
+![cm-6](../../images/cm-6.png)
 - **Notification Views**: An extension should notify users when: loading, on an unsupported community points page, missing MetaMask extension, not logged in with MetaMask, or connected to the wrong network.
-![cm-7](../assets/cm-7.png)
+![cm-7](../../images/cm-7.png)
 
 ### 2.2 Proposed Contracts Design
 We try to balance implementation complexity with the necessary trustlessness requirement as outlined in the specs. However, tokenomics is a complex topic that requires a substantial amount of iterative design process. For the purpose of this application, we will treat the subscription process as a black box, while offering 2 design choices that Community Points can take into production with sample code for demonstration purposes. Each solution design makes tradeoffs in cost, complexity, and feature requirements.
@@ -257,7 +257,7 @@ The claim transaction requires 3 signatures: User (KARMA input), Distributor (fe
 
 Here`s [an example](https://blockexplorer.ropsten.v1.omg.network/transaction/0xb394002ceeb80df2e05f12e21aad720a683343646a986ddc9e03981f017fc6fb) of a claim transaction:
 
-![cm-8](../assets/cm-8.png)
+![cm-8](../../images/cm-8.png)
 
 ###### Production Considerations
 - **Minting**: In production, KARMA tokens should be minted by the contract owner only. RCP tokens may be minted by the correspondent Community Points moderator.
