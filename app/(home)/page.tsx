@@ -68,17 +68,14 @@ export default function Page() {
     <main className="text-landing-foreground pt-4 pb-6 dark:text-landing-foreground-dark md:pb-12">
 
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
-      <div className="relative flex min-h-[600px] h-[70vh] max-h-[900px] border rounded-2xl overflow-hidden mx-auto w-full max-w-[1400px] bg-origin-border">
+      <div className="relative flex min-h-[300px] h-[52vh] max-h-[900px] border rounded-2xl overflow-hidden mx-auto w-full max-w-[1400px] bg-origin-border">
         <Hero />
         <div className="flex flex-col z-2 px-4 size-full md:p-12 max-md:items-center max-md:text-center">
-          {/* <p className="mt-12 text-xs text-brand font-medium rounded-full p-2 border border-brand/50 w-fit">
-            tbd
-          </p> */}
-          <h1 className="text-4xl my-8 leading-tighter font-medium xl:text-5xl xl:mb-12">
+          <h1 className="text-4xl my-4 leading-tighter font-medium xl:text-5xl xl:mb-12">
             Hi. I'm Dmytro! I write 
-             <br />developer docs
+             <br />developer docs for
             <br />
-            for <span className="text-brand">web3 companies</span>.
+             <span className="text-brand-secondary">web3 and AI companies</span>.
           </h1>
           {/* Credibility bar */}
           <p className="text-sm text-fd-muted-foreground mb-6 font-mono">
@@ -110,7 +107,7 @@ export default function Page() {
         <ToolStrip />
 
         {/* ── Availability Card ────────────────────────────────────────────── */}
-        <AvailabilityCard />
+        {/* <AvailabilityCard /> */}
 
         {/* ── Testimonials ─────────────────────────────────────────────────── */}
         {/* <Testimonials /> */}
@@ -175,8 +172,8 @@ function AvailabilityCard() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <span className="size-2.5 rounded-full bg-green-400 animate-pulse" />
-              <span className="text-xs font-medium text-green-500 uppercase tracking-wider">
+              <span className="size-2.5 rounded-full bg-brand-secondary animate-pulse" />
+              <span className="text-xs font-medium text-brand-secondary uppercase tracking-wider">
                 Available for contracts
               </span>
             </div>
@@ -294,14 +291,13 @@ function WorkSamples() {
       </div>
       <div className={cn(cardVariants(), 'flex flex-col')}>
         <h3 className={cn(headingVariants({ variant: 'h3', className: 'mb-6' }))}>
-          Docs that work as hard as the product.
+          Documentation built for both humans and agents
         </h3>
         <p className="mb-4">
-          Every sample in my portfolio ships with working code, verified output, and context
-          explaining the decisions behind it.
+          Every sample in my portfolio includes working code, verified output, and context explaining the decisions behind it.
         </p>
         <p className="mb-6">
-          From OpenAPI specs to runnable CLI tutorials, the writing and the examples stay in sync.
+          Each piece is clear enough for a developer reading through it, and structured for AI agents to consume directly.
         </p>
         <Link href="/portfolio" className={cn(buttonVariants({ className: 'w-fit' }))}>
           Browse Portfolio
@@ -358,10 +354,7 @@ paths:
     get:
       tags:
         - Alarm
-      summary: 'Provide alarms related to system memory, CPU, and storage usage, as well as application-specific alarms'
-      description: |
-        **Note:** Service operator alarms.
-      operationId: alarm_get
+      summary: 'Provide alarms for system memory, CPU, and storage usage'
                 `}
               lang="yaml"
             />
@@ -526,7 +519,7 @@ const caseStudies = [
     icon: BookOpenIcon,
     client: 'Chainlink',
     category: 'Developer Portal · Guides & Tutorials · Community',
-    headline: 'Support volume down 30–40%. Engagement up 25–35%',
+    headline: 'Support volume down 30–40%',
     body: `Chainlink's portal was a closed Read the Docs site with no path for community contributions. I helped migrate it to an open-source Eleventy site, then shipped integration guides for every new data feed and automation feature as they landed: price and data feeds, L2 sequencer health, job requests, and Automation upkeep. I also embedded in hackathons and Discord to feed developer friction back into the docs rather than answering the same questions one at a time.`,
     href: '/portfolio/case-studies/chainlink/',
   },

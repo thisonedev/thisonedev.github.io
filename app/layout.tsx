@@ -12,7 +12,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
         <RootProvider
-          theme={{ defaultTheme: '.dark' }} 
+          theme={{ defaultTheme: 'dark' }} 
           search={{ enabled: false }}
         >{children}</RootProvider>
       </body>

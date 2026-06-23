@@ -31,7 +31,7 @@ const Dithering = dynamic(
   { ssr: false },
 );
 
-// ─── Hero (unchanged shader logic) ───────────────────────────────────────────
+// ─── Hero ────────────────────────────────────────────────────────────────────
 
 export function Hero() {
   const { resolvedTheme } = useTheme();
@@ -53,8 +53,8 @@ export function Hero() {
           className="absolute inset-0 animate-fd-fade-in duration-800"
           colors={
             resolvedTheme === 'dark'
-              ? ['#39BE1C', '#9c2f05', '#7A2A0000']
-              : ['#fcfc51', '#ffa057', '#7A2A0020']
+              ? ['#1a3d2b', '#0d2e1e', '#2a3a1e00']  /* deep forest + dark olive */
+              : ['#d4e8d0', '#a8c5a0', '#e8ead800']   /* pale sage + warm stone mist */
           }
           colorBack="#00000000"
           softness={1}
@@ -69,9 +69,9 @@ export function Hero() {
       {showShaders && (
         <Dithering
           width={720}
-          height={720}
+          height={420}
           colorBack="#00000000"
-          colorFront={resolvedTheme === 'dark' ? '#DF3F00' : '#fa8023'}
+          colorFront={resolvedTheme === 'dark' ? '#8aad78' : '#6b8f5e'} /* muted sage sphere */
           shape="sphere"
           type="4x4"
           scale={0.5}
@@ -82,7 +82,7 @@ export function Hero() {
           minPixelRatio={1}
         />
       )}
-      <Image
+      {/* <Image
         ref={ref}
         src={HeroImage}
         alt="hero-image"
@@ -92,12 +92,12 @@ export function Hero() {
         )}
         onLoad={() => setImageReady(true)}
         priority
-      />
+      /> */}
     </>
   );
 }
 
-// ─── PreviewImages — renamed tabs to doc categories ──────────────────────────
+// ─── PreviewImages ────────────────────────────────────────────────────────────
 
 const previewButtonVariants = cva('w-24 h-8 text-sm font-medium transition-colors rounded-full', {
   variants: {
@@ -114,19 +114,19 @@ export function PreviewImages(props: ComponentProps<'div'>) {
   const previews = [
     {
       image: GuideImg,
-      name: 'How-tos',
+      name: 'Guides',
     },
     {
       image: OpenAPIImg,
-      name: 'APIs',
-    },
-    {
-      image: AppRefImg,
-      name: 'Apps',
+      name: 'REST API',
     },
     {
       image: SdkRefImg,
       name: 'SDK Ref',
+    },
+    {
+      image: AppRefImg,
+      name: 'Apps',
     },
   ];
 
@@ -165,7 +165,7 @@ export function PreviewImages(props: ComponentProps<'div'>) {
   );
 }
 
-// ─── Writing / Expertise Tabs ────────────────────────────────
+// ─── Writing / Expertise Tabs ─────────────────────────────────────────────────
 
 const ExpertiseTabs = [
   { name: 'API Refs', value: 'writer' },
@@ -273,7 +273,7 @@ export function ProcessStrip() {
   );
 }
 
-// ─── AgnosticBackground ─────────────────────────
+// ─── AgnosticBackground ───────────────────────────────────────────────────────
 
 export function AgnosticBackground() {
   const ref = useRef<HTMLDivElement>(null);
@@ -286,7 +286,7 @@ export function AgnosticBackground() {
     >
       <Dithering
         colorBack="#00000000"
-        colorFront="#c6bb58"
+        colorFront="#7a9e6e"  /* muted sage — natural complement to teal-green primary */
         shape="warp"
         type="4x4"
         speed={visible ? 0.4 : 0}

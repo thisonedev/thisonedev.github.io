@@ -4,155 +4,139 @@
 @import 'fumadocs-openapi/css/preset.css';
 @plugin 'tailwindcss-animate';
 
+/* ─── Tailwind theme tokens ──────────────────────────────────────────────── */
+
 @theme {
-  --color-fd-background:           hsl(0, 0%, 100%);
-  --color-fd-foreground:           hsl(222, 47%, 11%);
-  --color-fd-muted:                hsl(210, 40%, 96%);
-  --color-fd-muted-foreground:     hsl(215, 16%, 47%);
-  --color-fd-border:               hsl(220, 13%, 91%);
-  --color-fd-card:                 hsl(0, 0%, 100%);
-  --color-fd-card-foreground:      hsl(222, 47%, 11%);
-  --color-fd-primary:              hsl(162, 91%, 30%);
-  --color-fd-primary-foreground:   hsl(0, 0%, 100%);
-  --color-fd-secondary:            hsl(210, 40%, 96%);
-  --color-fd-secondary-foreground: hsl(222, 47%, 11%);
-  --color-fd-accent:               hsl(210, 40%, 96%);
-  --color-fd-accent-foreground:    hsl(222, 47%, 11%);
-  --color-fd-popover:              hsl(0, 0%, 100%);
-  --color-fd-popover-foreground:   hsl(222, 47%, 11%);
-  --color-fd-ring:                 hsl(162, 91%, 30%);
+  /* fumadocs colors (light mode defaults) */
+  --color-fd-background:              hsl(0, 0%, 100%);
+  --color-fd-foreground:              hsl(222, 47%, 11%);
+  --color-fd-muted:                   hsl(210, 40%, 96%);
+  --color-fd-muted-foreground:        hsl(215, 16%, 47%);
+  --color-fd-border:                  hsl(220, 13%, 91%);
+  --color-fd-card:                    hsl(0, 0%, 100%);
+  --color-fd-card-foreground:         hsl(222, 47%, 11%);
+  --color-fd-primary:                 hsl(162, 91%, 30%);
+  --color-fd-primary-foreground:      hsl(0, 0%, 100%);
+  --color-fd-secondary:               hsl(210, 40%, 96%);
+  --color-fd-secondary-foreground:    hsl(222, 47%, 11%);
+  --color-fd-accent:                  hsl(210, 40%, 96%);
+  --color-fd-accent-foreground:       hsl(222, 47%, 11%);
+  --color-fd-popover:                 hsl(0, 0%, 100%);
+  --color-fd-popover-foreground:      hsl(222, 47%, 11%);
+  --color-fd-ring:                    hsl(162, 91%, 30%);
+
+  /* custom brand (light mode — Earthy Harmony palette)
+     #3B6255 deep forest  · #8BA49A muted sage  · #D2C49E warm sand
+     #CBDED3 pale mint    · #E2DFDA linen                            */
+  --color-brand:                      #3B6255;   /* deep forest — headings, active states */
+  --color-brand-foreground:           #E2DFDA;   /* linen — text on brand bg */
+  --color-brand-200:                  #8BA49A;   /* muted sage — softer accents */
+  --color-brand-secondary:            #D2C49E;   /* warm sand — complementary accent */
+  --color-brand-secondary-foreground: #3B6255;   /* deep forest on sand */
+
+  /* landing foreground (light mode) */
+  --color-landing-foreground:         #3B6255;   /* deep forest */
+  --color-landing-foreground-200:     #8BA49A;   /* muted sage */
+
+  /* layout */
+  --spacing-page: 1436px;
 }
 
+@theme inline {
+  --default-mono-font-family: var(--font-mono);
+
+  /* animations */
+  --animate-marquee:          marquee var(--duration) infinite linear;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  --animate-stroke:           stroke 5s linear infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(calc(-100% - var(--gap))); }
+  }
+
+  @keyframes marquee-vertical {
+    from { transform: translateY(0); }
+    to   { transform: translateY(calc(-100% - var(--gap))); }
+  }
+
+  @keyframes stroke {
+    from { stroke-dasharray: 1000; }
+    to   { stroke-dasharray: 1000; stroke-dashoffset: 2000; }
+  }
+
+  /* gradient helpers */
+  --color-gradient-radial:       radial-gradient(circle, var(--tw-gradient-stops));
+  --color-repeat-gradient-to-r:  repeating-linear-gradient(to right, var(--tw-gradient-stops));
+  --color-repeat-gradient-to-br: repeating-linear-gradient(to bottom right, var(--tw-gradient-stops));
+}
+
+/* ─── CSS custom properties ──────────────────────────────────────────────── */
+
 :root {
-  --fd-layout-width: 1280px;
+  /* fumadocs layout */
+  --fd-layout-width:  1280px;
   --fd-sidebar-width: 260px;
-  --fd-toc-width: 224px;
+  --fd-toc-width:     224px;
+
+  /* doc-type theme overrides */
+  /* --headless-color:  hsl(250, 80%, 54%);
+  --framework-color: hsl(41, 100%, 40%);
+  --ui-color:        hsl(217, 100%, 58%); */
 }
 
 .dark {
-  --color-fd-background:           hsl(222, 47%, 7%);
-  --color-fd-foreground:           hsl(213, 31%, 91%);
-  --color-fd-muted:                hsl(223, 47%, 11%);
-  --color-fd-muted-foreground:     hsl(215, 20%, 65%);
-  --color-fd-border:               hsl(216, 34%, 17%);
-  --color-fd-card:                 hsl(222, 47%, 9%);
-  --color-fd-card-foreground:      hsl(213, 31%, 91%);
-  --color-fd-primary:              hsl(162, 91%, 40%);
-  --color-fd-primary-foreground:   hsl(0, 0%, 100%);
-  --color-fd-secondary:            hsl(223, 47%, 13%);
-  --color-fd-secondary-foreground: hsl(213, 31%, 91%);
-  --color-fd-accent:               hsl(216, 34%, 17%);
-  --color-fd-accent-foreground:    hsl(213, 31%, 91%);
-  --color-fd-popover:              hsl(222, 47%, 9%);
-  --color-fd-popover-foreground:   hsl(213, 31%, 91%);
-  --color-fd-ring:                 hsl(162, 91%, 40%);
+  /* fumadocs colors (dark mode overrides) */
+  --color-fd-background:              hsl(222, 47%, 7%);
+  --color-fd-foreground:              hsl(213, 31%, 91%);
+  --color-fd-muted:                   hsl(223, 47%, 11%);
+  --color-fd-muted-foreground:        hsl(215, 20%, 65%);
+  --color-fd-border:                  hsl(216, 34%, 17%);
+  --color-fd-card:                    hsl(222, 47%, 9%);
+  --color-fd-card-foreground:         hsl(213, 31%, 91%);
+  /* --color-fd-primary:                 hsl(162, 91%, 40%); */
+  --color-fd-primary:                 #AACBBE;
+  --color-fd-primary-foreground:      hsl(223, 47%, 13%);
+  --color-fd-secondary:               hsl(223, 47%, 13%);
+  --color-fd-secondary-foreground:    hsl(213, 31%, 91%);
+  --color-fd-accent:                  hsl(216, 34%, 17%);
+  --color-fd-accent-foreground:       hsl(213, 31%, 91%);
+  --color-fd-popover:                 hsl(222, 47%, 9%);
+  --color-fd-popover-foreground:      hsl(213, 31%, 91%);
+  --color-fd-ring:                    hsl(162, 91%, 40%);
+
+  /* custom brand (dark mode — palette lifted, lightened for dark bg) */
+  --color-brand:                      #CBDED3;   /* pale mint — softer highlights */
+  --color-brand-200:                  #AACBBE;   /* muted sage — readable on dark */
+  --color-brand-foreground:           #3B6255;   /* deep forest on sage */
+  --color-brand-secondary:            #D2C49E;   /* warm sand stays the same */
+  --color-brand-secondary-foreground: #3B6255;
+
+  /* landing foreground (dark mode) */
+  --color-landing-foreground:         #CBDED3;   /* pale mint */
+  --color-landing-foreground-200:     #AACBBE;   /* muted sage */
+
+  /* doc-type theme overrides */
+  --headless-color:  hsl(250, 100%, 80%);
+  --framework-color: #fff383;
+  --ui-color:        #a9ceff;
 }
+
+/* ─── Doc-type primary color overrides ───────────────────────────────────── */
+
+.ui        { --color-fd-primary: var(--ui-color); }
+.headless  { --color-fd-primary: var(--headless-color); }
+.framework { --color-fd-primary: var(--framework-color); }
+
+/* ─── Base styles ────────────────────────────────────────────────────────── */
 
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-#nd-page .prose a[data-card] {
-  margin-bottom: 10px;
-}
+/* ─── fumadocs component tweaks ──────────────────────────────────────────── */
 
-#nd-nav nav {
-  font-size: 0.875rem;
-}
-
-button[data-theme-toggle] {
-  order: 999;
-}
-
-/* Custom theme */
-
-@theme {
-  --spacing-page: 1436px;
-  --color-brand: hsl(26, 73%, 51%);
-  --color-brand-foreground: white;
-  --color-brand-secondary: #c6bb58;
-  --color-brand-secondary-foreground: #97890c;
-  --color-brand-200: hsl(33, 100%, 50%);
-
-  --color-landing-foreground: #59592a;
-  --color-landing-foreground-200: #a8a866;
-}
-
-.dark {
-  --color-landing-foreground: #e4e2d0;
-  --color-landing-foreground-200: #b7af7e;
-
-  --color-brand: #fff383;
-  --color-brand-secondary: #fc7744;
-  --color-brand-secondary-foreground: #521700;
-  --color-brand-foreground: black;
-  --color-brand-200: #fff7c8;
-}
-
-@theme inline {
-  --default-mono-font-family: var(--font-mono);
-  --animate-marquee: marquee var(--duration) infinite linear;
-  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
-
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(calc(-100% - var(--gap)));
-    }
-  }
-
-  @keyframes marquee-vertical {
-    from {
-      transform: translateY(0);
-    }
-    to {
-      transform: translateY(calc(-100% - var(--gap)));
-    }
-  }
-
-  @keyframes stroke {
-    from {
-      stroke-dasharray: 1000;
-    }
-    to {
-      stroke-dasharray: 1000;
-      stroke-dashoffset: 2000;
-    }
-  }
-
-  --animate-stroke: stroke 5s linear infinite;
-
-  --color-gradient-radial: radial-gradient(circle, var(--tw-gradient-stops));
-  --color-repeat-gradient-to-r: repeating-linear-gradient(to right, var(--tw-gradient-stops));
-  --color-repeat-gradient-to-br: repeating-linear-gradient(
-    to bottom right,
-    var(--tw-gradient-stops)
-  );
-}
-
-.ui {
-  --color-fd-primary: var(--ui-color);
-}
-
-.headless {
-  --color-fd-primary: var(--headless-color);
-}
-
-.framework {
-  --color-fd-primary: var(--framework-color);
-}
-
-:root {
-  --headless-color: hsl(250, 80%, 54%);
-  --framework-color: hsl(41, 100%, 40%);
-  --ui-color: hsl(217, 100%, 58%);
-}
-
-.dark {
-  --headless-color: hsl(250 100% 80%);
-  --framework-color: #fff383;
-  --ui-color: #a9ceff;
-}
+#nd-page .prose a[data-card] { margin-bottom: 10px; }
+#nd-nav nav                  { font-size: 0.875rem; }
+button[data-theme-toggle]    { order: 999; }
