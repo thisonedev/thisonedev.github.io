@@ -205,7 +205,7 @@ Still on `master`, create `.github/workflows/sync-from-public.yml`. This workflo
 
 ```yaml
 # .github/workflows/sync-from-public.yml
-name: Sync from public docs
+name: Sync from public site
 on:
   schedule:
     - cron: "0 6 * * *"
@@ -214,6 +214,8 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -221,19 +223,13 @@ jobs:
 
       - name: Pull in the latest public content
         run: |
-          git remote add public https://github.com/my-docs-public/docs.git
+          git config --global user.email "YOUR_GITHUB_USERNAME@users.noreply.github.com"
+          git config --global user.name "YOUR_GITHUB_USERNAME"
+          git remote add public https://github.com/YOUR_GITHUB_USERNAME/YOUR_PUBLIC_REPO.git
           git fetch public master
           git checkout master
-          git merge public/master --no-edit
-          git push origin master
-```
-
-This workflow reads from a public repo, so no secrets are required. Commit and push it to `staging`:
-
-```bash
-git add .github/workflows/sync-from-public.yml
-git commit -m "add sync workflow"
-git push staging master
+          git merge public/master --no-edit -X ours
+          git push https://x-access-token:${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}@github.com/YOUR_GITHUB_USERNAME/YOUR_STAGING_REPO.git master
 ```
 </Step>
 
@@ -253,8 +249,8 @@ name: Promote page to public site
 on:
   workflow_dispatch:
     inputs:
-      paths:
-        description: "Comma-separated paths relative to content/ (e.g. docs/new-feature.mdx,blog/new-post.mdx,assets/01.png)"
+      commit_message:
+        description: "Commit message for the PR (e.g. 'docs: add registration guide')"
         required: true
 
 jobs:
@@ -265,6 +261,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: staging
+          fetch-depth: 2
 
       - name: Checkout public site
         uses: actions/checkout@v4
@@ -273,13 +270,17 @@ jobs:
           token: ${{ secrets.PUBLIC_REPO_PUSH_TOKEN }}
           path: public
 
-      - name: Copy approved pages across
+      - name: Copy changed files across
         run: |
-          IFS=',' read -ra FILES <<< "${{ inputs.paths }}"
-          for path in "${FILES[@]}"; do
-            path=$(echo "$path" | xargs)
-            mkdir -p "public/content/$(dirname "$path")"
-            cp "staging/content/$path" "public/content/$path"
+          cd staging
+          git diff --name-only HEAD~1 HEAD -- content/ | while read path; do
+            if [ -f "$path" ]; then
+              mkdir -p "../public/$(dirname "$path")"
+              cp "$path" "../public/$path"
+              echo "Copied: $path"
+            else
+              echo "Deleted (skipping): $path"
+            fi
           done
 
       - name: Open a PR against the public repo
@@ -289,14 +290,13 @@ jobs:
         run: |
           git config user.email "YOUR_GITHUB_USERNAME@users.noreply.github.com"
           git config user.name "YOUR_GITHUB_USERNAME"
-          COMMIT_MSG=$(git -C $GITHUB_WORKSPACE/staging log -1 --pretty=%s)
           BRANCH="promote/$(date +%Y%m%d-%H%M%S)"
           git checkout -b "$BRANCH"
           git add content/
-          git commit -m "$COMMIT_MSG"
+          git commit -m "${{ inputs.commit_message }}"
           git push origin "$BRANCH"
-          gh pr create --title "$COMMIT_MSG" \
-            --body "Files: ${{ inputs.paths }}" \
+          gh pr create --title "${{ inputs.commit_message }}" \
+            --body "$(git diff --name-only HEAD~1 HEAD -- content/)" \
             --base master
 ```
 
@@ -391,9 +391,7 @@ Once reviewers have approved, merge the pull request on the staging repo.
 <Step>
 ### Run the promote workflow
 
-Go to the private repo on GitHub, open Actions, select Promote page to public docs, and click Run workflow. Enter the file path relative to `content/`, for example `new-feature/index.mdx`, and run it.
-
-![img](../images/blog-01.png)
+Go to the private repo on GitHub, open Actions, select Promote page to public docs, and click Run workflow. Enter a commit message describing the change. The workflow automatically detects every file touched in the latest staging commit, including images and other assets, and copies them across.
 
 The workflow copies the file into the public repo and opens a pull request there. Merging that pull request is what ships the page and triggers the public site's deploy workflow.
 
