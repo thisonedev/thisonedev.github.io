@@ -17,7 +17,6 @@ import GuideImg from '../../content/images/guide-ref.png';
 import SdkRefImg from '../../content/images/sdk-ref.png';
 import AppRefImg from '../../content/images/app-ref.png';
 import { cva } from 'class-variance-authority';
-import HeroImage from '../../content/images/hero-preview.png';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 
@@ -38,7 +37,6 @@ export function Hero() {
   const ref = useRef<HTMLImageElement | null>(null);
   const visible = useIsVisible(ref);
   const [showShaders, setShowShaders] = useState(false);
-  const [imageReady, setImageReady] = useState(false);
 
   useEffect(() => {
     setTimeout(() => {
@@ -53,8 +51,8 @@ export function Hero() {
           className="absolute inset-0 animate-fd-fade-in duration-800"
           colors={
             resolvedTheme === 'dark'
-              ? ['#1a3d2b', '#0d2e1e', '#2a3a1e00']  /* deep forest + dark olive */
-              : ['#d4e8d0', '#a8c5a0', '#e8ead800']   /* pale sage + warm stone mist */
+              ? ['#1a3d2b', '#0d2e1e', '#2a3a1e00']
+              : ['#d4e8d0', '#a8c5a0', '#e8ead800']
           }
           colorBack="#00000000"
           softness={1}
@@ -71,28 +69,17 @@ export function Hero() {
           width={720}
           height={420}
           colorBack="#00000000"
-          colorFront={resolvedTheme === 'dark' ? '#8aad78' : '#6b8f5e'} /* muted sage sphere */
+          colorFront={resolvedTheme === 'dark' ? '#8aad78' : '#6b8f5e'}
           shape="sphere"
           type="4x4"
-          scale={0.5}
+          scale={0.7}
           size={3}
           speed={0}
           frame={5000 * 120}
-          className="absolute animate-fd-fade-in duration-400 max-lg:bottom-[-50%] max-lg:left-[-200px] lg:top-[-5%] lg:right-0"
+          className="absolute animate-fd-fade-in duration-400 max-lg:bottom-[-65%] max-lg:left-[-120px] lg:top-[-5%] lg:right-0"
           minPixelRatio={1}
         />
       )}
-      {/* <Image
-        ref={ref}
-        src={HeroImage}
-        alt="hero-image"
-        className={cn(
-          'absolute top-[460px] left-[20%] max-w-[1200px] rounded-xl border-2 lg:top-[400px]',
-          imageReady ? 'animate-in fade-in duration-400' : 'invisible',
-        )}
-        onLoad={() => setImageReady(true)}
-        priority
-      /> */}
     </>
   );
 }
@@ -113,16 +100,16 @@ export function PreviewImages(props: ComponentProps<'div'>) {
 
   const previews = [
     {
-      image: GuideImg,
-      name: 'Guides',
-    },
-    {
       image: OpenAPIImg,
       name: 'REST API',
     },
     {
       image: SdkRefImg,
       name: 'SDK Ref',
+    },
+    {
+      image: GuideImg,
+      name: 'Tutorials',
     },
     {
       image: AppRefImg,

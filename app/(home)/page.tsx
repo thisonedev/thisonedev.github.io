@@ -20,7 +20,6 @@ import {
   Writing,
   ProcessStrip,
 } from '@/app/(home)/page.client';
-import CLIImage from '../../content/images/cli.png';
 import StoryImage from '../../content/images/story.png';
 
 // ─── CVA Variants ──────────────────────────────────
@@ -79,7 +78,7 @@ export default function Page() {
           </h1>
           {/* Credibility bar */}
           <p className="text-sm text-fd-muted-foreground mb-6 font-mono">
-            8+ yrs · 5 clients · Fintech, L2s, Stablecoins
+            5 clients · Fintech, L2s, Stablecoins
           </p>
           <div className="flex flex-row items-center gap-4 flex-wrap w-fit">
             <a href="#contact" className={cn(buttonVariants(), 'max-sm:text-sm')}>
@@ -105,9 +104,6 @@ export default function Page() {
 
         {/* ── Tool Strip ───────────────────────────────────────────────────── */}
         <ToolStrip />
-
-        {/* ── Availability Card ────────────────────────────────────────────── */}
-        {/* <AvailabilityCard /> */}
 
         {/* ── Testimonials ─────────────────────────────────────────────────── */}
         {/* <Testimonials /> */}
@@ -140,8 +136,8 @@ export default function Page() {
 
 function ToolStrip() {
   const tools = [
-    'Git', 'MDX', 'Docs as Code', 'OpenAPI / Swagger', 'Docusaurus', 'Mintlify',
-    'Fumadocs', 'Solidity', 'TypeScript', 'React'
+    'Git', 'MDX', 'Docs as Code', 'OpenAPI / Swagger', 'TypeScript', 'React', 'Solidity',
+    'Fumadocs',  'Mintlify'
   ];
 
   return (
@@ -154,57 +150,6 @@ function ToolStrip() {
           {tool}
         </span>
       ))}
-    </div>
-  );
-}
-
-// ─── Availability Card ────────────────────────────────────────────────────────
-
-function AvailabilityCard() {
-  return (
-    <div className="relative p-4 rounded-2xl col-span-full z-2 overflow-hidden md:p-8">
-      <Image
-        src={CLIImage}
-        alt=""
-        className="absolute inset-0 size-full object-top object-cover -z-1"
-      />
-      <div className="mx-auto w-full max-w-[800px] p-6 bg-fd-card text-fd-card-foreground border rounded-2xl shadow-lg">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-3">
-              <span className="size-2.5 rounded-full bg-brand-secondary animate-pulse" />
-              <span className="text-xs font-medium text-brand-secondary uppercase tracking-wider">
-                Available for contracts
-              </span>
-            </div>
-            <h2 className={cn(headingVariants({ variant: 'h3', className: 'mb-3' }))}>
-              Let's build docs people use.
-            </h2>
-            <p className="text-fd-muted-foreground text-sm mb-1">
-              Developer portals · API references · How-tos · User guides · Onboarding flows
-            </p>
-            <p className="text-xs text-fd-muted-foreground/60">
-              Free consultation. I'll tell you if I'm not the right fit.
-            </p>
-          </div>
-          <div className="flex flex-col gap-2 shrink-0">
-            <a
-              href="mailto:thisonedev.md@gmail.com"
-              className={cn(buttonVariants({ variant: 'primary' }))}
-            >
-              Email Me
-            </a>
-            <a
-              href="https://www.linkedin.com/in/thisonedev/"
-              rel="noreferrer noopener"
-              target="_blank"
-              className={cn(buttonVariants({ variant: 'secondary' }))}
-            >
-              DM on LinkedIn
-            </a>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }
@@ -724,7 +669,7 @@ function Industries() {
       icon: TerminalIcon,
       name: 'API-first Startups',
       description:
-        'Developer portals, REST references, WebSocket guides, and onboarding flows for teams shipping fast.',
+        'Developer portals, REST references, and onboarding flows for teams shipping fast.',
     },
     {
       icon: BookOpenIcon,
