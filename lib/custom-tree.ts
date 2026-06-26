@@ -1,395 +1,209 @@
 import type { Node } from 'fumadocs-core/page-tree';
+import { SPECS } from '@/lib/openapi';
 import { resolveIcon } from '@/lib/resolveIcon';
 
-export const customTree: Node[] = [
-  {
-    name: 'Home',
-    url: '/portfolio',
-    type: 'page',
-    icon: resolveIcon('House'),
-  },
-  {
-  type: 'separator',
-  name: 'API References',
-  },
-  {
-    name: 'Hyperliquid Perpetuals API',
-    url: '/portfolio/api/hyperliquid-perps',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'Hyperliquid Spot API',
-    url: '/portfolio/api/hyperliquid-spot',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-    {
-    name: 'Hyperliquid Exchange API',
-    url: '/portfolio/api/hyperliquid-exchange',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'OMG Network Info API',
-    url: '/portfolio/api/omg-info',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'OMG Network Operator API',
-    url: '/portfolio/api/omg-operator',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'OMG Network Watcher API',
-    url: '/portfolio/api/omg-watcher',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'Myria Collections SDK Reference',
-    url: '/portfolio/myria/collections',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'Myria Minting SDK Reference',
-    url: '/portfolio/myria/minting',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'Myria Projects SDK Reference',
-    url: '/portfolio/myria/projects',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    name: 'Paytomat Console Panel REST API',
-    url: '/portfolio/paytomat/console-api',
-    type: 'page',
-    icon: resolveIcon('BookA'),
-  },
-  {
-    type: 'separator',
-    name: 'CLIs & SDK Modules',
-  },
-  {
-    name: 'TON CLI Typescript',
-    url: '/portfolio/ton/ton-cli-typescript',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'OMG Network Samples App',
-    url: '/portfolio/omg-network/samples-app',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Myria Samples App',
-    url: '/portfolio/myria/samples-app',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Tether WDK SUI Module',
-    url: '/portfolio/tether/wdk-sui-wallet',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Tether WDK CowSwap Module',
-    url: '/portfolio/tether/wdk-cowswap',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    type: 'separator',
-    name: 'Apps',
-  },
-  {
-    name: 'TON Appkit Starter',
-    url: '/portfolio/ton/ton-appkit-starter',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Graph App',
-    url: '/portfolio/chainlink/graph-app',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Hive Apps Explorer',
-    url: '/portfolio/hive/hive-apps-explorer',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Hive DAO',
-    url: '/portfolio/hive/hive-dao',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    name: 'Hived Scan',
-    url: '/portfolio/hive/hivedscan',
-    type: 'page',
-    icon: resolveIcon('Terminal'),
-  },
-  {
-    type: 'separator',
-    name: 'How-tos',
-  },
-  {
-    name: 'How to Interact with Multibaas',
-    url: '/portfolio/omg-network/multibaas',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'How to Manage a VPS',
-    url: '/portfolio/omg-network/how-to-manage-vps',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'How to Run a Watcher',
-    url: '/portfolio/omg-network/run-watcher',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'How to Manage a Watcher',
-    url: '/portfolio/omg-network/manage-watcher',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'How to Register Upkeep',
-    url: '/portfolio/chainlink/register-upkeep',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'How to Make an Existing Job Request',
-    url: '/portfolio/chainlink/job-requests',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    type: 'separator',
-    name: 'Guides & Tutorials',
-  },
-  {
-    name: 'OMG Network Exchange Use Case',
-    url: '/portfolio/omg-network/exchange-use-case',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'OMG Network Wallet Use Case',
-    url: '/portfolio/omg-network/wallet-use-case',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Hello World TON',
-    url: '/portfolio/ton/hello-world-ton',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Chainlink API Calls',
-    url: '/portfolio/chainlink/api-calls',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Arbitrum Feeds Chainlink',
-    url: '/portfolio/chainlink/arbitrum-feeds',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Flight Aware Chainlink',
-    url: '/portfolio/chainlink/flight-aware',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'L2 Sequencer Health Flag',
-    url: '/portfolio/chainlink/health-flag',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Mint Transactions',
-    url: '/portfolio/myria/mint-transactions',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    type: 'separator',
-    name: 'Quickstarts',
-  },
-  {
-    name: 'OMG Network Web Wallet Quickstart',
-    url: '/portfolio/omg-network/web-wallet',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Myria Quickstart',
-    url: '/portfolio/myria/quickstart',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    type: 'separator',
-    name: 'Product Specs',
-  },
-  {
-    name: 'Community Points Engine',
-    url: '/portfolio/omg-network/community-points',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    type: 'separator',
-    name: 'Blog Posts & Announcements',
-  },
-  {
-    name: 'Paytomat Overview',
-    url: '/portfolio/paytomat/overview',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-    {
-    name: 'Smart Contracts',
-    url: '/portfolio/paytomat/smart-contracts',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'EOS Resources',
-    url: '/portfolio/paytomat/eos-resources',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Revenue Contract',
-    url: '/portfolio/paytomat/revenue-contract',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Wallet Redesign',
-    url: '/portfolio/paytomat/wallet',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: '1C Integration',
-    url: '/portfolio/paytomat/1c-integration',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Loyalty Program',
-    url: '/portfolio/paytomat/loyalty-program',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Decentralized Franchise',
-    url: '/portfolio/paytomat/franchise',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Merchant Interfaces',
-    url: '/portfolio/paytomat/merchant-interfaces',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    type: 'separator',
-    name: 'Research',
-  },
-  {
-    name: 'Unipeg',
-    url: '/portfolio/research/unipeg',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Real Finance',
-    url: '/portfolio/research/realfinance',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'SUI',
-    url: '/portfolio/research/sui',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Eitherway',
-    url: '/portfolio/research/eitherway',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Gitlawb',
-    url: '/portfolio/research/gitlawb',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Pengu',
-    url: '/portfolio/research/pengu',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'JOE',
-    url: '/portfolio/research/joe',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Keeta Network',
-    url: '/portfolio/research/keeta',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Mantle Network',
-    url: '/portfolio/research/mantle',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'KnoxNet',
-    url: '/portfolio/research/knoxnet',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Psyopanime',
-    url: '/portfolio/research/psyopanime',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
-  },
-  {
-    name: 'Ovpp',
-    url: '/portfolio/research/ovpp',
-    type: 'page',
-    icon: resolveIcon('Scroll'),
+/**
+ * Sidebar tree for the portfolio section.
+ *
+ * Structure: a flat list of `Node`s where each "section" is a separator
+ * followed by one or more page entries. The OpenAPI References section
+ * is generated from `SPECS` so adding/removing a spec only touches one place.
+ */
+
+type PageEntry = {
+  name: string;
+  url: string;
+  icon: string;
+};
+
+type Section = {
+  separator: string;
+  entries: PageEntry[];
+};
+
+/** Sections with a single entry render without a separator. */
+const sections: Section[] = [
+  // ─── API References ────────────────────────────────────────────────────────
+  {
+    separator: 'API References',
+    entries: Object.entries(SPECS).map(([slug, { title }]) => ({
+      name: title,
+      url: `/portfolio/api/${slug}`,
+      icon: 'BookA',
+    })),
+  },
+
+  // ─── CLIs & SDK Modules ────────────────────────────────────────────────────
+  {
+    separator: 'CLIs & SDK Modules',
+    entries: [
+      { name: 'TON CLI Typescript', url: '/portfolio/ton/ton-cli-typescript', icon: 'Terminal' },
+      {
+        name: 'OMG Network Samples App',
+        url: '/portfolio/omg-network/samples-app',
+        icon: 'Terminal',
+      },
+      { name: 'Myria Samples App', url: '/portfolio/myria/samples-app', icon: 'Terminal' },
+      { name: 'Tether WDK SUI Module', url: '/portfolio/tether/wdk-sui-wallet', icon: 'Terminal' },
+      { name: 'Tether WDK CowSwap Module', url: '/portfolio/tether/wdk-cowswap', icon: 'Terminal' },
+    ],
+  },
+
+  // ─── Apps ──────────────────────────────────────────────────────────────────
+  {
+    separator: 'Apps',
+    entries: [
+      { name: 'TON Appkit Starter', url: '/portfolio/ton/ton-appkit-starter', icon: 'Terminal' },
+      { name: 'Graph App', url: '/portfolio/chainlink/graph-app', icon: 'Terminal' },
+      { name: 'Hive Apps Explorer', url: '/portfolio/hive/hive-apps-explorer', icon: 'Terminal' },
+      { name: 'Hive DAO', url: '/portfolio/hive/hive-dao', icon: 'Terminal' },
+      { name: 'Hived Scan', url: '/portfolio/hive/hivedscan', icon: 'Terminal' },
+    ],
+  },
+
+  // ─── How-tos ───────────────────────────────────────────────────────────────
+  {
+    separator: 'How-tos',
+    entries: [
+      {
+        name: 'How to Interact with Multibaas',
+        url: '/portfolio/omg-network/multibaas',
+        icon: 'Scroll',
+      },
+      {
+        name: 'How to Manage a VPS',
+        url: '/portfolio/omg-network/how-to-manage-vps',
+        icon: 'Scroll',
+      },
+      { name: 'How to Run a Watcher', url: '/portfolio/omg-network/run-watcher', icon: 'Scroll' },
+      {
+        name: 'How to Manage a Watcher',
+        url: '/portfolio/omg-network/manage-watcher',
+        icon: 'Scroll',
+      },
+      {
+        name: 'How to Register Upkeep',
+        url: '/portfolio/chainlink/register-upkeep',
+        icon: 'Scroll',
+      },
+      {
+        name: 'How to Make an Existing Job Request',
+        url: '/portfolio/chainlink/job-requests',
+        icon: 'Scroll',
+      },
+    ],
+  },
+
+  // ─── Guides & Tutorials ────────────────────────────────────────────────────
+  {
+    separator: 'Guides & Tutorials',
+    entries: [
+      {
+        name: 'OMG Network Exchange Use Case',
+        url: '/portfolio/omg-network/exchange-use-case',
+        icon: 'Scroll',
+      },
+      {
+        name: 'OMG Network Wallet Use Case',
+        url: '/portfolio/omg-network/wallet-use-case',
+        icon: 'Scroll',
+      },
+      { name: 'Hello World TON', url: '/portfolio/ton/hello-world-ton', icon: 'Scroll' },
+      { name: 'Chainlink API Calls', url: '/portfolio/chainlink/api-calls', icon: 'Scroll' },
+      {
+        name: 'Arbitrum Feeds Chainlink',
+        url: '/portfolio/chainlink/arbitrum-feeds',
+        icon: 'Scroll',
+      },
+      { name: 'Flight Aware Chainlink', url: '/portfolio/chainlink/flight-aware', icon: 'Scroll' },
+      { name: 'L2 Sequencer Health Flag', url: '/portfolio/chainlink/health-flag', icon: 'Scroll' },
+      { name: 'Mint Transactions', url: '/portfolio/myria/mint-transactions', icon: 'Scroll' },
+    ],
+  },
+
+  // ─── Quickstarts ───────────────────────────────────────────────────────────
+  {
+    separator: 'Quickstarts',
+    entries: [
+      {
+        name: 'OMG Network Web Wallet Quickstart',
+        url: '/portfolio/omg-network/web-wallet',
+        icon: 'Scroll',
+      },
+      { name: 'Myria Quickstart', url: '/portfolio/myria/quickstart', icon: 'Scroll' },
+    ],
+  },
+
+  // ─── Product Specs ─────────────────────────────────────────────────────────
+  {
+    separator: 'Product Specs',
+    entries: [
+      {
+        name: 'Community Points Engine',
+        url: '/portfolio/omg-network/community-points',
+        icon: 'Scroll',
+      },
+    ],
+  },
+
+  // ─── Blog Posts & Announcements ────────────────────────────────────────────
+  {
+    separator: 'Blog Posts & Announcements',
+    entries: [
+      { name: 'Paytomat Overview', url: '/portfolio/paytomat/overview', icon: 'Scroll' },
+      { name: 'Smart Contracts', url: '/portfolio/paytomat/smart-contracts', icon: 'Scroll' },
+      { name: 'EOS Resources', url: '/portfolio/paytomat/eos-resources', icon: 'Scroll' },
+      { name: 'Revenue Contract', url: '/portfolio/paytomat/revenue-contract', icon: 'Scroll' },
+      { name: 'Wallet Redesign', url: '/portfolio/paytomat/wallet', icon: 'Scroll' },
+      { name: '1C Integration', url: '/portfolio/paytomat/1c-integration', icon: 'Scroll' },
+      { name: 'Loyalty Program', url: '/portfolio/paytomat/loyalty-program', icon: 'Scroll' },
+      { name: 'Decentralized Franchise', url: '/portfolio/paytomat/franchise', icon: 'Scroll' },
+      {
+        name: 'Merchant Interfaces',
+        url: '/portfolio/paytomat/merchant-interfaces',
+        icon: 'Scroll',
+      },
+    ],
+  },
+
+  // ─── Research ──────────────────────────────────────────────────────────────
+  {
+    separator: 'Research',
+    entries: [
+      { name: 'Unipeg', url: '/portfolio/research/unipeg', icon: 'Scroll' },
+      { name: 'Real Finance', url: '/portfolio/research/realfinance', icon: 'Scroll' },
+      { name: 'SUI', url: '/portfolio/research/sui', icon: 'Scroll' },
+      { name: 'Eitherway', url: '/portfolio/research/eitherway', icon: 'Scroll' },
+      { name: 'Gitlawb', url: '/portfolio/research/gitlawb', icon: 'Scroll' },
+      { name: 'Pengu', url: '/portfolio/research/pengu', icon: 'Scroll' },
+      { name: 'JOE', url: '/portfolio/research/joe', icon: 'Scroll' },
+      { name: 'Keeta Network', url: '/portfolio/research/keeta', icon: 'Scroll' },
+      { name: 'Mantle Network', url: '/portfolio/research/mantle', icon: 'Scroll' },
+      { name: 'KnoxNet', url: '/portfolio/research/knoxnet', icon: 'Scroll' },
+      { name: 'Psyopanime', url: '/portfolio/research/psyopanime', icon: 'Scroll' },
+      { name: 'Ovpp', url: '/portfolio/research/ovpp', icon: 'Scroll' },
+    ],
   },
 ];
+
+/** Top-level "Home" page sits above all sections. */
+const HOME: Node = {
+  name: 'Home',
+  url: '/portfolio',
+  type: 'page',
+  icon: resolveIcon('House'),
+};
+
+/** Build a tree of `Node`s from a section descriptor. */
+function toNodes(section: Section): Node[] {
+  const separator: Node = { type: 'separator', name: section.separator };
+  const pages: Node[] = section.entries.map((entry) => ({
+    name: entry.name,
+    url: entry.url,
+    type: 'page',
+    icon: resolveIcon(entry.icon),
+  }));
+  return [separator, ...pages];
+}
+
+export const customTree: Node[] = [HOME, ...sections.flatMap(toNodes)];

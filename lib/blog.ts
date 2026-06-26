@@ -1,6 +1,6 @@
+import { blogPosts } from 'collections/server';
 import { loader } from 'fumadocs-core/source';
 import { toFumadocsSource } from 'fumadocs-mdx/runtime/server';
-import { blogPosts } from 'collections/server';
 
 export const blog = loader({
   baseUrl: '/blog',
@@ -9,30 +9,39 @@ export const blog = loader({
 
 type BlogPost = ReturnType<typeof blog.getPages>[number];
 
-// Front matter `date` can come back as either a string ("2026-04-15") or an
-// already-parsed Date, depending on how the YAML scalar is written. Anchor
-// it to UTC midnight so formatting never shifts by a day depending on the
-// server/browser timezone.
+// ─── Date helpers ───────────────────────────────────────────────────────────
+
+/**
+ * Front matter `date` can come back as either a string ("2026-04-15") or an
+ * already-parsed Date, depending on how the YAML scalar is written. Anchor
+ * it to UTC midnight so formatting never shifts by a day depending on the
+ * server/browser timezone.
+ */
 function toUTCDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(`${value}T00:00:00Z`);
 }
 
+// ─── Sorting & grouping ─────────────────────────────────────────────────────
+
+/** Posts in newest-first order. */
 export function getSortedPosts(): BlogPost[] {
   return [...blog.getPages()].sort((a, b) => {
-    const aDate = toUTCDate((a.data as any).date);
-    const bDate = toUTCDate((b.data as any).date);
+    const aDate = toUTCDate((a.data as PostData).date);
+    const bDate = toUTCDate((b.data as PostData).date);
     return bDate.getTime() - aDate.getTime();
   });
 }
 
-// Groups posts by year. Since `posts` is expected to already be sorted
-// newest-first (see getSortedPosts), years come out in descending order
-// for free, matching a Jekyll-style archive.
+/**
+ * Groups posts by year. Since the input is expected to already be sorted
+ * newest-first (see `getSortedPosts`), years come out in descending order
+ * for free, matching a Jekyll-style archive.
+ */
 export function groupPostsByYear(posts: BlogPost[]): [number, BlogPost[]][] {
   const groups = new Map<number, BlogPost[]>();
 
   for (const post of posts) {
-    const year = toUTCDate((post.data as any).date).getUTCFullYear();
+    const year = toUTCDate((post.data as PostData).date).getUTCFullYear();
     const existing = groups.get(year);
     if (existing) existing.push(post);
     else groups.set(year, [post]);
@@ -41,7 +50,9 @@ export function groupPostsByYear(posts: BlogPost[]): [number, BlogPost[]][] {
   return [...groups.entries()];
 }
 
-// "Apr 15" — used in the archive list.
+// ─── Formatting ─────────────────────────────────────────────────────────────
+
+/** "Apr 15" — used in the archive list. */
 export function formatPostDate(value: string | Date): string {
   return toUTCDate(value).toLocaleDateString('en-US', {
     month: 'short',
@@ -50,7 +61,7 @@ export function formatPostDate(value: string | Date): string {
   });
 }
 
-// "April 15, 2026" — used on the post page itself.
+/** "April 15, 2026" — used on the post page itself. */
 export function formatFullPostDate(value: string | Date): string {
   return toUTCDate(value).toLocaleDateString('en-US', {
     month: 'long',
@@ -59,3 +70,10 @@ export function formatFullPostDate(value: string | Date): string {
     timeZone: 'UTC',
   });
 }
+
+// ─── Local types ────────────────────────────────────────────────────────────
+
+type PostData = {
+  date: string | Date;
+  description?: string;
+};

@@ -1,7 +1,12 @@
 import type { BaseLayoutProps } from 'fumadocs-ui/layouts/shared';
-import { appName, gitConfig } from './shared';
 import { Mail } from 'lucide-react';
 
+import { appName, gitConfig } from '@/lib/shared';
+
+/**
+ * Shared layout options for every DocsLayout / HomeLayout in the app.
+ * Customize the nav, links, and GitHub URL here once.
+ */
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {

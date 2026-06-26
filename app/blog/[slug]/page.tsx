@@ -1,15 +1,18 @@
-import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+
 import { getMDXComponents } from '@/components/mdx';
 import { blog, formatFullPostDate } from '@/lib/blog';
+
+// ─── Page ───────────────────────────────────────────────────────────────────
 
 export default async function Page(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
   const page = blog.getPage([slug]);
   if (!page) notFound();
 
-  const data = page.data as any;
+  const data = page.data as BlogPostData;
   const MDX = data.body;
 
   return (
@@ -28,21 +31,33 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
   );
 }
 
+// ─── Static params ──────────────────────────────────────────────────────────
+
 export function generateStaticParams() {
   return blog.getPages().map((page) => ({
     slug: page.slugs[0],
   }));
 }
 
-export async function generateMetadata(
-  props: { params: Promise<{ slug: string }> },
-): Promise<Metadata> {
+// ─── Metadata ───────────────────────────────────────────────────────────────
+
+export async function generateMetadata(props: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
   const { slug } = await props.params;
   const page = blog.getPage([slug]);
   if (!page) return {};
 
   return {
     title: page.data.title,
-    description: (page.data as any).description,
+    description: (page.data as BlogPostData).description,
   };
 }
+
+// ─── Local types ────────────────────────────────────────────────────────────
+
+type BlogPostData = {
+  body: React.ComponentType<{ components?: Record<string, unknown> }>;
+  date: string | Date;
+  description?: string;
+};

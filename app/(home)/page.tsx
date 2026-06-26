@@ -1,8 +1,7 @@
-import Image from 'next/image';
-import { cn } from '@/lib/cn';
-import Link from 'next/link';
 import { cva } from 'class-variance-authority';
+import { ServerCodeBlock } from 'fumadocs-ui/components/codeblock.rsc';
 import {
+  ArrowUpRightIcon,
   BookOpenIcon,
   CodeIcon,
   FileTextIcon,
@@ -10,16 +9,11 @@ import {
   LayoutIcon,
   TerminalIcon,
   ZapIcon,
-  ArrowUpRightIcon,
 } from 'lucide-react';
-import { Marquee } from '@/app/(home)/marquee';
-import { ServerCodeBlock } from 'fumadocs-ui/components/codeblock.rsc';
-import {
-  Hero,
-  PreviewImages,
-  Writing,
-  ProcessStrip,
-} from '@/app/(home)/page.client';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Hero, PreviewImages, ProcessStrip, Writing } from '@/app/(home)/page.client';
+import { cn } from '@/lib/cn';
 import StoryImage from '../../content/images/story.png';
 
 // ─── CVA Variants ──────────────────────────────────
@@ -65,16 +59,16 @@ const cardVariants = cva('rounded-2xl text-sm p-6 bg-origin-border shadow-lg', {
 export default function Page() {
   return (
     <main className="text-landing-foreground pt-4 pb-6 dark:text-landing-foreground-dark md:pb-12">
-
       {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div className="relative flex min-h-[300px] h-[52vh] max-h-[900px] border rounded-2xl overflow-hidden mx-auto w-full max-w-[1400px] bg-origin-border">
         <Hero />
         <div className="flex flex-col z-2 px-4 size-full md:p-12 max-md:items-center max-md:text-center">
           <h1 className="text-4xl my-4 leading-tighter font-medium xl:text-5xl xl:mb-12">
-            Hi. I'm Dmytro! I write 
-             <br />developer docs for
+            Hi. I'm Dmytro! I write
             <br />
-             <span className="text-brand-secondary">web3 and AI companies</span>.
+            developer docs for
+            <br />
+            <span className="text-brand-secondary">web3 and AI companies</span>.
           </h1>
           {/* Credibility bar */}
           <p className="text-sm text-fd-muted-foreground mb-6 font-mono">
@@ -84,7 +78,10 @@ export default function Page() {
             <a href="#contact" className={cn(buttonVariants(), 'max-sm:text-sm')}>
               Get in Touch
             </a>
-            <Link href="/portfolio" className={cn(buttonVariants({ variant: 'secondary' }), 'max-sm:text-sm')}>
+            <Link
+              href="/portfolio"
+              className={cn(buttonVariants({ variant: 'secondary' }), 'max-sm:text-sm')}
+            >
               View Portfolio
             </Link>
           </div>
@@ -92,21 +89,17 @@ export default function Page() {
       </div>
 
       <div className="grid grid-cols-1 gap-10 mt-12 px-6 mx-auto w-full max-w-[1400px] md:px-12 lg:grid-cols-2 lg:mt-20">
-
         {/* ── Pitch Paragraph ──────────────────────────────────────────────── */}
         <p className="text-2xl tracking-tight leading-snug font-light col-span-full md:text-3xl xl:text-4xl">
           Technical writer with 8+ years of experience in{' '}
           <span className="text-brand font-medium">APIs</span>,{' '}
           <span className="text-brand font-medium">blockchain ecosystems</span>, and{' '}
-          <span className="text-brand font-medium">AI workflows</span>. I turn complex systems
-          into documentation developers use.
+          <span className="text-brand font-medium">AI workflows</span>. I turn complex systems into
+          documentation developers use.
         </p>
 
         {/* ── Tool Strip ───────────────────────────────────────────────────── */}
         <ToolStrip />
-
-        {/* ── Testimonials ─────────────────────────────────────────────────── */}
-        {/* <Testimonials /> */}
 
         {/* ── Work Samples (replaces PreviewImages / Aesthetics) ───────────── */}
         <WorkSamples />
@@ -126,7 +119,6 @@ export default function Page() {
 
         {/* ── CTA ──────────────────────────────────────────────────────────── */}
         <ClosingCTA />
-
       </div>
     </main>
   );
@@ -136,8 +128,15 @@ export default function Page() {
 
 function ToolStrip() {
   const tools = [
-    'Git', 'MDX', 'Docs as Code', 'OpenAPI / Swagger', 'TypeScript', 'React', 'Solidity',
-    'Fumadocs',  'Mintlify'
+    'Git',
+    'MDX',
+    'Docs as Code',
+    'OpenAPI / Swagger',
+    'TypeScript',
+    'React',
+    'Solidity',
+    'Fumadocs',
+    'Mintlify',
   ];
 
   return (
@@ -151,71 +150,6 @@ function ToolStrip() {
         </span>
       ))}
     </div>
-  );
-}
-
-// ─── Testimonials ─────────────────────────────────────────────────────────────
-
-const testimonials = [
-  {
-    avatar: 'https://avatars.githubusercontent.com/u/124599',
-    user: 'Client · DeFi Protocol',
-    role: 'Head of DevRel',
-    message: `Dmytro took our scattered API notes and turned them into a reference developers were citing in support tickets within a week of launch.
-
-Zero back-and-forth on rewrites. Just clean, accurate docs on the first pass.`,
-  },
-];
-
-function Testimonials() {
-  return (
-    <>
-      <h2
-        className={cn(
-          headingVariants({
-            variant: 'h2',
-            className: 'mt-8 text-brand text-center mb-4 col-span-full',
-          }),
-        )}
-      >
-        What Clients Say
-      </h2>
-
-      <div
-        className={cn(
-          cardVariants({
-            variant: 'secondary',
-            className: 'relative p-0 col-span-full',
-          }),
-        )}
-      >
-        <div className="absolute inset-0 z-2 inset-shadow-[0_10px_60px] inset-shadow-brand-secondary rounded-2xl" />
-        <Marquee className="p-8">
-          {testimonials.map((item, i) => (
-            <div
-              key={i}
-              className="flex flex-col rounded-xl border bg-fd-card text-landing-foreground p-4 shadow-lg w-[320px]"
-            >
-              <p className="text-sm whitespace-pre-wrap">{item.message}</p>
-              <div className="mt-auto flex flex-row items-center gap-2 pt-4">
-                <Image
-                  src={item.avatar}
-                  alt="avatar"
-                  width="32"
-                  height="32"
-                  unoptimized
-                  className="size-8 rounded-full"
-                />
-                <div>
-                  <p className="text-sm font-medium">{item.user}</p>
-                  <p className="text-xs text-fd-muted-foreground">{item.role}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </Marquee>
-      </div>
-    </>
   );
 }
 
@@ -239,10 +173,12 @@ function WorkSamples() {
           Documentation built for both humans and agents
         </h3>
         <p className="mb-4">
-          Every sample in my portfolio includes working code, verified output, and context explaining the decisions behind it.
+          Every sample in my portfolio includes working code, verified output, and context
+          explaining the decisions behind it.
         </p>
         <p className="mb-6">
-          Each piece is clear enough for a developer reading through it, and structured for AI agents to consume directly.
+          Each piece is clear enough for a developer reading through it, and structured for AI
+          agents to consume directly.
         </p>
         <Link href="/portfolio" className={cn(buttonVariants({ className: 'w-fit' }))}>
           Browse Portfolio
@@ -308,8 +244,8 @@ paths:
                 API &amp; SDK References
               </h3>
               <p>
-                Structured, scannable, and tied to real request/response examples. Developers
-                find what they need without reading everything.
+                Structured, scannable, and tied to real request/response examples. Developers find
+                what they need without reading everything.
               </p>
               <ul className="text-xs list-disc list-inside mt-8 space-y-1">
                 <li>REST &amp; WebSocket endpoint coverage</li>
@@ -361,8 +297,8 @@ import config from "../config";
                 CLIs &amp; Sample Apps
               </h3>
               <p>
-                Runnable code. I build minimal working apps so the reader can
-                clone, run, and adapt rather than guess from incomplete snippets.
+                Runnable code. I build minimal working apps so the reader can clone, run, and adapt
+                rather than guess from incomplete snippets.
               </p>
               <ul className="text-xs list-disc list-inside mt-8 space-y-1">
                 <li>Clean and structured CLIs</li>
@@ -618,8 +554,8 @@ function Toolchain() {
           QA-like mindset
         </h3>
         <p className="mb-6 text-fd-muted-foreground">
-          Every API endpoint, CLI command, and code sample gets tested against a working
-          environment before it appears in the docs. If it doesn't run, it doesn't ship.
+          Every API endpoint, CLI command, and code sample gets tested against a working environment
+          before it appears in the docs. If it doesn't run, it doesn't ship.
         </p>
         <ServerCodeBlock
           codeblock={{ title: 'createWallet.ts' }}
@@ -656,14 +592,12 @@ function Industries() {
     {
       icon: ZapIcon,
       name: 'Fintech and Payments',
-      description:
-        'Stablecoins, POS systems, payment APIs, merchant integrations.',
+      description: 'Stablecoins, POS systems, payment APIs, merchant integrations.',
     },
     {
       icon: GlobeIcon,
       name: 'Infrastructure',
-      description:
-        'Node setup and management, VPS configuration.',
+      description: 'Node setup and management, VPS configuration.',
     },
     {
       icon: TerminalIcon,
@@ -674,8 +608,7 @@ function Industries() {
     {
       icon: BookOpenIcon,
       name: 'AI Workflows',
-      description:
-        'LLM-powered toolchains, agent frameworks, and AI-assisted developer tooling.',
+      description: 'LLM-powered toolchains, agent frameworks, and AI-assisted developer tooling.',
     },
   ];
 
@@ -697,9 +630,7 @@ function Industries() {
         return (
           <div key={d.name} className={cn(cardVariants(), 'flex flex-col')}>
             <Icon className="text-brand mb-4" />
-            <h3 className={cn(headingVariants({ variant: 'h3', className: 'mb-4' }))}>
-              {d.name}
-            </h3>
+            <h3 className={cn(headingVariants({ variant: 'h3', className: 'mb-4' }))}>{d.name}</h3>
             <p className="text-fd-muted-foreground">{d.description}</p>
           </div>
         );

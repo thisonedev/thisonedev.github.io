@@ -1,6 +1,7 @@
+import 'fumadocs-openapi/css/preset.css';
 import { RootProvider } from 'fumadocs-ui/provider/next';
 import { Inter } from 'next/font/google';
-import 'fumadocs-openapi/css/preset.css';
+
 import './global.css';
 
 const inter = Inter({
@@ -11,10 +12,9 @@ export default function Layout({ children }: LayoutProps<'/'>) {
   return (
     <html lang="en" className={inter.className} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen">
-        <RootProvider
-          theme={{ defaultTheme: 'dark' }} 
-          search={{ enabled: false }}
-        >{children}</RootProvider>
+        <RootProvider theme={{ defaultTheme: 'dark' }} search={{ enabled: false }}>
+          {children}
+        </RootProvider>
       </body>
     </html>
   );

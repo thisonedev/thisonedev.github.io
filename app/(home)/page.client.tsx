@@ -1,5 +1,10 @@
 'use client';
 
+import { cva } from 'class-variance-authority';
+import { ArrowRight } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { useTheme } from 'next-themes';
 import {
   type ComponentProps,
   Fragment,
@@ -9,16 +14,11 @@ import {
   useRef,
   useState,
 } from 'react';
-import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import Image from 'next/image';
 import OpenAPIImg from '../../content/images/api-ref.png';
+import AppRefImg from '../../content/images/app-ref.png';
 import GuideImg from '../../content/images/guide-ref.png';
 import SdkRefImg from '../../content/images/sdk-ref.png';
-import AppRefImg from '../../content/images/app-ref.png';
-import { cva } from 'class-variance-authority';
-import { useTheme } from 'next-themes';
-import dynamic from 'next/dynamic';
 
 const GrainGradient = dynamic(
   () => import('@paper-design/shaders-react').then((mod) => mod.GrainGradient),
@@ -129,7 +129,8 @@ export function PreviewImages(props: ComponentProps<'div'>) {
         />
         {previews.map((item, i) => (
           <button
-            key={i}
+            key={item.name}
+            type="button"
             className={cn(previewButtonVariants({ active: active === i }))}
             onClick={() => setActive(i)}
           >
@@ -139,7 +140,7 @@ export function PreviewImages(props: ComponentProps<'div'>) {
       </div>
       {previews.map((item, i) => (
         <Image
-          key={i}
+          key={item.name}
           src={item.image}
           alt="preview"
           className={cn(
@@ -173,14 +174,15 @@ export function Writing({
         What I write
       </h2>
       <p className="text-center mb-8 mx-auto w-full max-w-[800px]">
-        From low-level API references to end-to-end integration tutorials with real, runnable
-        code at every step.
+        From low-level API references to end-to-end integration tutorials with real, runnable code
+        at every step.
       </p>
       <div className="flex justify-center items-center gap-4 text-fd-muted-foreground mb-6">
         {ExpertiseTabs.map((item) => (
           <Fragment key={item.value}>
             <ArrowRight className="size-4 first:hidden" />
             <button
+              type="button"
               className={cn(
                 'text-lg font-medium transition-colors',
                 item.value === tab && 'text-brand',
@@ -273,7 +275,7 @@ export function AgnosticBackground() {
     >
       <Dithering
         colorBack="#00000000"
-        colorFront="#7a9e6e"  /* muted sage — natural complement to teal-green primary */
+        colorFront="#7a9e6e" /* muted sage — natural complement to teal-green primary */
         shape="warp"
         type="4x4"
         speed={visible ? 0.4 : 0}

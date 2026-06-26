@@ -1,4 +1,4 @@
-import { getPageMarkdownUrl, source } from '@/lib/source';
+import type { OperationItem, WebhookItem } from 'fumadocs-openapi/ui';
 import {
   DocsBody,
   DocsDescription,
@@ -7,103 +7,129 @@ import {
   MarkdownCopyButton,
   ViewOptionsPopover,
 } from 'fumadocs-ui/layouts/notebook/page';
-import { notFound } from 'next/navigation';
-import { getMDXComponents } from '@/components/mdx';
-import type { Metadata } from 'next';
 import { createRelativeLink } from 'fumadocs-ui/mdx';
-import { gitConfig } from '@/lib/shared';
-import { APIPage } from '@/components/api-page';
-import { openapi, SPEC_PATHS, SPEC_TITLES } from '@/lib/openapi';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
+import { APIPage } from '@/components/api-page';
+import { getMDXComponents } from '@/components/mdx';
+import { getSpecPath, getSpecTitle, openapi, SPECS } from '@/lib/openapi';
+import { gitConfig } from '@/lib/shared';
+import { getPageMarkdownUrl, source } from '@/lib/source';
+
+/**
+ * Route: `/portfolio/[[...slug]]`
+ *
+ * Three render modes dispatched on the URL shape:
+ *
+ *   1. `/portfolio/api/<slug>`     — OpenAPI spec group page (all ops).
+ *   2. `/portfolio/<operationId>`  — Individual OpenAPI operation page,
+ *                                    routed through the fumadocs source.
+ *   3. Everything else             — Regular MDX portfolio entry.
+ */
 export default async function Page(props: PageProps<'/portfolio/[[...slug]]'>) {
   const params = await props.params;
   const slug = params.slug ?? [];
 
-  // ── OpenAPI group pages: /openapi/<spec-name> ──────────────────────────────
-  // Renders ALL operations for a spec on one page by building props directly
-  // from the dereferenced schema, avoiding internal fumadocs-openapi imports.
+  // ── 1. OpenAPI group pages ────────────────────────────────────────────────
   if (slug[0] === 'api' && slug.length === 2) {
-    const specPath = SPEC_PATHS[slug[1]];
-    const title = SPEC_TITLES[slug[1]];
-    if (!specPath || !title) notFound();
-
-    const schema = await openapi.getSchema(specPath);
-    const { dereferenced } = schema;
-    const methodKeys = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
-
-    const operations: any[] = [];
-    for (const [path, pathItem] of Object.entries(dereferenced.paths ?? {})) {
-      if (!pathItem) continue;
-      for (const method of methodKeys) {
-        const operation = (pathItem as any)[method];
-        if (!operation) continue;
-        operations.push({
-          method,
-          path,
-          pathItem,
-          operation,
-          displayName: operation.summary || (pathItem as any).summary || operation.operationId || path,
-        });
-      }
-    }
-
-    const webhooks: any[] = [];
-    for (const [name, pathItem] of Object.entries((dereferenced as any).webhooks ?? {})) {
-      if (!pathItem) continue;
-      for (const method of methodKeys) {
-        const operation = (pathItem as any)[method];
-        if (!operation) continue;
-        webhooks.push({
-          method,
-          name,
-          pathItem,
-          operation,
-          displayName: operation.summary || (pathItem as any).summary || name,
-        });
-      }
-    }
-
-    return (
-      <DocsPage full>
-        <DocsTitle>{title}</DocsTitle>
-        <DocsBody>
-          <APIPage
-            document={specPath}
-            operations={operations}
-            webhooks={webhooks}
-            showTitle
-            showDescription
-          />
-        </DocsBody>
-      </DocsPage>
-    );
+    return renderSpecGroup(slug[1]);
   }
 
-  // ── Individual OpenAPI operation pages: /openapi/<operationId> ─────────────
+  // ── 2 & 3. Source-routed pages (openapi ops + MDX) ────────────────────────
   const page = source.getPage(slug);
   if (!page) notFound();
 
   if (page.type === 'openapi') {
-      const openapiData = page.data as any;
-      return (
-        <DocsPage>
-          <DocsTitle>{page.data.title}</DocsTitle>
-          <DocsBody>
-            <APIPage {...openapiData.getAPIPageProps()} />
-          </DocsBody>
-        </DocsPage>
-      );
-    }
+    return renderOpenApiOperation(page);
+  }
 
-  // ── Regular MDX pages ──────────────────────────────────────────────────────
-  const mdxData = page.data as any;
-  const MDX = mdxData.body;
+  return renderMdxPage(page);
+}
+
+// ─── Render helpers ─────────────────────────────────────────────────────────
+
+/** HTTP methods walked when discovering operations on a spec group page. */
+const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
+
+async function renderSpecGroup(specSlug: string) {
+  const specPath = getSpecPath(specSlug);
+  const title = getSpecTitle(specSlug);
+  if (!specPath || !title) notFound();
+
+  // `<APIPage>` does not auto-discover operations — it requires explicit
+  // `operations` / `webhooks` lists derived from the dereferenced schema.
+  const { dereferenced } = await openapi.getSchema(specPath);
+
+  const operations: OperationItem[] = [];
+  for (const [path, pathItem] of Object.entries(dereferenced.paths ?? {})) {
+    if (!pathItem) continue;
+    for (const method of HTTP_METHODS) {
+      if ((pathItem as Record<string, unknown>)[method]) {
+        operations.push({ path, method });
+      }
+    }
+  }
+
+  const webhooks: WebhookItem[] = [];
+  for (const [name, pathItem] of Object.entries(
+    (dereferenced as { webhooks?: Record<string, Record<string, unknown>> }).webhooks ?? {},
+  )) {
+    if (!pathItem) continue;
+    for (const method of HTTP_METHODS) {
+      if (pathItem[method]) {
+        webhooks.push({ name, method });
+      }
+    }
+  }
+
+  return (
+    <DocsPage full>
+      <DocsTitle>{title}</DocsTitle>
+      <DocsBody>
+        <APIPage
+          document={specPath}
+          operations={operations}
+          webhooks={webhooks}
+          showTitle
+          showDescription
+        />
+      </DocsBody>
+    </DocsPage>
+  );
+}
+
+function renderOpenApiOperation(page: ReturnType<typeof source.getPage>) {
+  if (!page) notFound();
+  const data = page.data as unknown as {
+    title: string;
+    getAPIPageProps: () => React.ComponentProps<typeof APIPage>;
+  };
+
+  return (
+    <DocsPage>
+      <DocsTitle>{data.title}</DocsTitle>
+      <DocsBody>
+        <APIPage {...data.getAPIPageProps()} />
+      </DocsBody>
+    </DocsPage>
+  );
+}
+
+function renderMdxPage(page: NonNullable<ReturnType<typeof source.getPage>>) {
+  const data = page.data as unknown as {
+    body: React.ComponentType<{ components?: Record<string, unknown> }>;
+    toc?: React.ComponentProps<typeof DocsPage>['toc'];
+    full?: boolean;
+    description?: string;
+  };
+  const MDX = data.body;
   const markdownUrl = getPageMarkdownUrl(page).url;
 
   return (
-    <DocsPage toc={mdxData.toc} full={mdxData.full}>
+    <DocsPage toc={data.toc} full={data.full}>
       <DocsTitle>{page.data.title}</DocsTitle>
-      <DocsDescription className="mb-0">{mdxData.description}</DocsDescription>
+      <DocsDescription className="mb-0">{data.description}</DocsDescription>
       <div className="flex flex-row gap-2 items-center border-b pb-6">
         <MarkdownCopyButton markdownUrl={markdownUrl} />
         <ViewOptionsPopover
@@ -122,19 +148,22 @@ export default async function Page(props: PageProps<'/portfolio/[[...slug]]'>) {
   );
 }
 
+// ─── Static params ──────────────────────────────────────────────────────────
+
+/**
+ * Pre-render every portfolio route, including the OpenAPI spec group pages
+ * (`/portfolio/api/<slug>`) which are not part of the fumadocs source.
+ */
 export async function generateStaticParams() {
   const params = source.generateParams();
-
-  const openapiGroupSlugs = Object.keys(SPEC_PATHS).map((key) => ({
-    slug: ['api', key],
+  const specGroupSlugs = Object.keys(SPECS).map((slug) => ({
+    slug: ['api', slug],
   }));
 
-  return [
-    { slug: [] },
-    ...openapiGroupSlugs,
-    ...params,
-  ];
+  return [{ slug: [] }, ...specGroupSlugs, ...params];
 }
+
+// ─── Metadata ───────────────────────────────────────────────────────────────
 
 export async function generateMetadata(
   props: PageProps<'/portfolio/[[...slug]]'>,
@@ -142,10 +171,10 @@ export async function generateMetadata(
   const params = await props.params;
   const slug = params.slug ?? [];
 
-  if (slug[0] === 'openapi' && slug.length === 2) {
-    const title = SPEC_TITLES[slug[1]];
-    if (!title) return {};
-    return { title };
+  // OpenAPI spec group pages: read title from SPECS.
+  if (slug[0] === 'api' && slug.length === 2) {
+    const title = getSpecTitle(slug[1]);
+    return title ? { title } : {};
   }
 
   const page = source.getPage(slug);
@@ -153,6 +182,6 @@ export async function generateMetadata(
 
   return {
     title: page.data.title,
-    description: (page.data as any).description,
+    description: (page.data as unknown as { description?: string }).description,
   };
 }
