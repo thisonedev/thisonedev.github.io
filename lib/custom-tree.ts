@@ -3,11 +3,8 @@ import { SPECS } from '@/lib/openapi';
 import { resolveIcon } from '@/lib/resolveIcon';
 
 /**
- * Sidebar tree for the portfolio section.
- *
- * Structure: a flat list of `Node`s where each "section" is a separator
- * followed by one or more page entries. The OpenAPI References section
- * is generated from `SPECS` so adding/removing a spec only touches one place.
+ * Sidebar tree for the portfolio section. Generates the OpenAPI
+ * References section from `SPECS`.
  */
 
 type PageEntry = {
@@ -21,9 +18,8 @@ type Section = {
   entries: PageEntry[];
 };
 
-/** Sections with a single entry render without a separator. */
+/** Sections. A section with one entry renders without a separator. */
 const sections: Section[] = [
-  // ─── API References ────────────────────────────────────────────────────────
   {
     separator: 'API References',
     entries: Object.entries(SPECS).map(([slug, { title }]) => ({
@@ -32,8 +28,6 @@ const sections: Section[] = [
       icon: 'BookA',
     })),
   },
-
-  // ─── CLIs & SDK Modules ────────────────────────────────────────────────────
   {
     separator: 'CLIs & SDK Modules',
     entries: [
@@ -48,8 +42,6 @@ const sections: Section[] = [
       { name: 'Tether WDK CowSwap Module', url: '/portfolio/tether/wdk-cowswap', icon: 'Terminal' },
     ],
   },
-
-  // ─── Apps ──────────────────────────────────────────────────────────────────
   {
     separator: 'Apps',
     entries: [
@@ -60,8 +52,6 @@ const sections: Section[] = [
       { name: 'Hived Scan', url: '/portfolio/hive/hivedscan', icon: 'Terminal' },
     ],
   },
-
-  // ─── How-tos ───────────────────────────────────────────────────────────────
   {
     separator: 'How-tos',
     entries: [
@@ -93,8 +83,6 @@ const sections: Section[] = [
       },
     ],
   },
-
-  // ─── Guides & Tutorials ────────────────────────────────────────────────────
   {
     separator: 'Guides & Tutorials',
     entries: [
@@ -120,8 +108,6 @@ const sections: Section[] = [
       { name: 'Mint Transactions', url: '/portfolio/myria/mint-transactions', icon: 'Scroll' },
     ],
   },
-
-  // ─── Quickstarts ───────────────────────────────────────────────────────────
   {
     separator: 'Quickstarts',
     entries: [
@@ -133,8 +119,6 @@ const sections: Section[] = [
       { name: 'Myria Quickstart', url: '/portfolio/myria/quickstart', icon: 'Scroll' },
     ],
   },
-
-  // ─── Product Specs ─────────────────────────────────────────────────────────
   {
     separator: 'Product Specs',
     entries: [
@@ -145,8 +129,6 @@ const sections: Section[] = [
       },
     ],
   },
-
-  // ─── Blog Posts & Announcements ────────────────────────────────────────────
   {
     separator: 'Blog Posts & Announcements',
     entries: [
@@ -165,8 +147,6 @@ const sections: Section[] = [
       },
     ],
   },
-
-  // ─── Research ──────────────────────────────────────────────────────────────
   {
     separator: 'Research',
     entries: [
@@ -186,24 +166,18 @@ const sections: Section[] = [
   },
 ];
 
-/** Top-level "Home" page sits above all sections. */
-const HOME: Node = {
-  name: 'Home',
-  url: '/portfolio',
-  type: 'page',
-  icon: resolveIcon('House'),
-};
+const omitSingleSection = (s: Section) =>
+  s.entries.length > 1
+    ? [{ type: 'separator' as const, name: s.separator }, ...s.entries.flatMap(toNode)]
+    : s.entries.flatMap(toNode);
 
-/** Build a tree of `Node`s from a section descriptor. */
-function toNodes(section: Section): Node[] {
-  const separator: Node = { type: 'separator', name: section.separator };
-  const pages: Node[] = section.entries.map((entry) => ({
+const toNode = (entry: PageEntry): Node =>
+  ({
+    type: 'page',
     name: entry.name,
     url: entry.url,
-    type: 'page',
     icon: resolveIcon(entry.icon),
-  }));
-  return [separator, ...pages];
-}
+  }) as Node;
 
-export const customTree: Node[] = [HOME, ...sections.flatMap(toNodes)];
+/** Fumadocs page tree consumed by `<DocsLayout>`. */
+export const customTree: Node[] = sections.flatMap(omitSingleSection);

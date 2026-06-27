@@ -1,0 +1,34 @@
+{
+  "name": "thisonedev-portfolio",
+  "url": "https://thisonedev.github.io/portfolio/",
+  "version": "1.0.0",
+  "protocolVersion": "0.3",
+  "preferredTransport": "HTTP+JSON",
+  "supportedInterfaces": [
+    {
+      "url": "https://thisonedev.github.io/portfolio/",
+      "protocolBinding": "HTTP+JSON",
+      "protocolVersion": "0.3"
+    }
+  ],
+  "provider": {
+    "url": "https://thisonedev.github.io/portfolio/",
+    "organization": "Dmytro"
+  },
+  "documentationUrl": "https://thisonedev.github.io/portfolio/",
+  "capabilities": {
+    "streaming": false,
+    "pushNotifications": false
+  },
+  "defaultInputModes": ["text/plain"],
+  "defaultOutputModes": ["text/markdown"],
+  "skills": [
+    {
+      "id": "thisonedev-portfolio",
+      "name": "Dmytro's Technical Writing Portfolio",
+      "description": "Technical writing portfolio covering API references, SDK guides, tutorials, and case studies across web3, fintech, and AI tooling. Six OpenAPI specs are wired as full reference pages; blog posts and portfolio case studies are written in MDX.",
+      "tags": ["technical-writing", "api-documentation", "openapi", "web3", "blockchain", "ai"],
+      "url": "https://thisonedev.github.io/portfolio/skill.md"
+    }
+  ]
+}

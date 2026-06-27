@@ -16,8 +16,6 @@ import { Hero, PreviewImages, ProcessStrip, Writing } from '@/app/(home)/page.cl
 import { cn } from '@/lib/cn';
 import StoryImage from '../../content/images/story.png';
 
-// ─── CVA Variants ──────────────────────────────────
-
 const headingVariants = cva('font-medium tracking-tight', {
   variants: {
     variant: {
@@ -54,12 +52,9 @@ const cardVariants = cva('rounded-2xl text-sm p-6 bg-origin-border shadow-lg', {
   },
 });
 
-// ─── Page ────────────────────────────────────────────────────────────────────
-
 export default function Page() {
   return (
     <main className="text-landing-foreground pt-4 pb-6 dark:text-landing-foreground-dark md:pb-12">
-      {/* ── Hero ─────────────────────────────────────────────────────────── */}
       <div className="relative flex min-h-[300px] h-[52vh] max-h-[900px] border rounded-2xl overflow-hidden mx-auto w-full max-w-[1400px] bg-origin-border">
         <Hero />
         <div className="flex flex-col z-2 px-4 size-full md:p-12 max-md:items-center max-md:text-center">
@@ -70,7 +65,6 @@ export default function Page() {
             <br />
             <span className="text-brand-secondary">web3 and AI companies</span>.
           </h1>
-          {/* Credibility bar */}
           <p className="text-sm text-fd-muted-foreground mb-6 font-mono">
             5 clients · Fintech, L2s, Stablecoins
           </p>
@@ -89,7 +83,6 @@ export default function Page() {
       </div>
 
       <div className="grid grid-cols-1 gap-10 mt-12 px-6 mx-auto w-full max-w-[1400px] md:px-12 lg:grid-cols-2 lg:mt-20">
-        {/* ── Pitch Paragraph ──────────────────────────────────────────────── */}
         <p className="text-2xl tracking-tight leading-snug font-light col-span-full md:text-3xl xl:text-4xl">
           Technical writer with 8+ years of experience in{' '}
           <span className="text-brand font-medium">APIs</span>,{' '}
@@ -98,33 +91,24 @@ export default function Page() {
           documentation developers use.
         </p>
 
-        {/* ── Tool Strip ───────────────────────────────────────────────────── */}
         <ToolStrip />
 
-        {/* ── Work Samples (replaces PreviewImages / Aesthetics) ───────────── */}
         <WorkSamples />
 
-        {/* ── Process Strip ────────────────────────────────────────────────── */}
         <ProcessSection />
 
-        {/* ── Expertise Tabs ───────────────────────────────────────────────── */}
         <ExpertiseTabs />
 
-        {/* ── Case Studies ─────────────────────────────────────────────────── */}
         <CaseStudies />
 
-        {/* ── Toolchain & Industries ───────────────────────────────────────── */}
         <Toolchain />
         <Industries />
 
-        {/* ── CTA ──────────────────────────────────────────────────────────── */}
         <ClosingCTA />
       </div>
     </main>
   );
 }
-
-// ─── Tool Strip ──────────────────────────────────────────────────────────────
 
 function ToolStrip() {
   const tools = [
@@ -152,8 +136,6 @@ function ToolStrip() {
     </div>
   );
 }
-
-// ─── Work Samples ─────────────────────────────────────────────────────────────
 
 function WorkSamples() {
   return (
@@ -188,8 +170,6 @@ function WorkSamples() {
   );
 }
 
-// ─── Process Strip ────────────────────────────────────────────────────────────
-
 function ProcessSection() {
   return (
     <div className="col-span-full">
@@ -197,8 +177,6 @@ function ProcessSection() {
     </div>
   );
 }
-
-// ─── Expertise Tabs ───────────────────────────────────────────────────────────
 
 function ExpertiseTabs() {
   return (
@@ -385,8 +363,6 @@ contract FlightAwareChainlink is ChainlinkClient {
   );
 }
 
-// ─── Case Studies ─────────────────────────────────────────────────────────────
-
 const caseStudies = [
   {
     icon: GlobeIcon,
@@ -467,8 +443,6 @@ function CaseStudies() {
   );
 }
 
-// ─── Toolchain ───────────────────────────────────────
-
 function Toolchain() {
   const tools = [
     { name: 'Git & GitHub', description: 'Docs-as-code version control and PR reviews.' },
@@ -492,7 +466,6 @@ function Toolchain() {
         Toolchain
       </h2>
 
-      {/* Full-width featured card */}
       <div className="relative col-span-full min-h-[250px] px-2 py-6 rounded-2xl z-2 border shadow-md overflow-hidden">
         <Image
           src={StoryImage}
@@ -547,7 +520,6 @@ function Toolchain() {
         </div>
       </div>
 
-      {/* QA card */}
       <div className={cn(cardVariants(), 'flex flex-col')}>
         <CodeIcon className="text-brand mb-4" />
         <h3 className={cn(headingVariants({ variant: 'h3', className: 'mb-6' }))}>
@@ -584,8 +556,6 @@ export async function createWallet(opts: CreateWalletOptions): Promise<void> {
     </>
   );
 }
-
-// ─── Industries ───────────────────────────────────────────────────────────────
 
 function Industries() {
   const domains = [
@@ -638,8 +608,6 @@ function Industries() {
     </>
   );
 }
-
-// ─── Closing CTA ──────────────────────────────────────────────────────────────
 
 function ClosingCTA() {
   return (

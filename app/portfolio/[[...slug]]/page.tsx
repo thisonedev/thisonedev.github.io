@@ -18,25 +18,19 @@ import { gitConfig } from '@/lib/shared';
 import { getPageMarkdownUrl, source } from '@/lib/source';
 
 /**
- * Route: `/portfolio/[[...slug]]`
- *
- * Three render modes dispatched on the URL shape:
- *
- *   1. `/portfolio/api/<slug>`     — OpenAPI spec group page (all ops).
- *   2. `/portfolio/<operationId>`  — Individual OpenAPI operation page,
- *                                    routed through the fumadocs source.
- *   3. Everything else             — Regular MDX portfolio entry.
+ * `/portfolio/[[...slug]]` dispatches three render modes:
+ * OpenAPI spec group page, individual OpenAPI operation,
+ * or regular MDX entry.
  */
+
 export default async function Page(props: PageProps<'/portfolio/[[...slug]]'>) {
   const params = await props.params;
   const slug = params.slug ?? [];
 
-  // ── 1. OpenAPI group pages ────────────────────────────────────────────────
   if (slug[0] === 'api' && slug.length === 2) {
     return renderSpecGroup(slug[1]);
   }
 
-  // ── 2 & 3. Source-routed pages (openapi ops + MDX) ────────────────────────
   const page = source.getPage(slug);
   if (!page) notFound();
 
@@ -47,9 +41,6 @@ export default async function Page(props: PageProps<'/portfolio/[[...slug]]'>) {
   return renderMdxPage(page);
 }
 
-// ─── Render helpers ─────────────────────────────────────────────────────────
-
-/** HTTP methods walked when discovering operations on a spec group page. */
 const HTTP_METHODS = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 'trace'] as const;
 
 async function renderSpecGroup(specSlug: string) {
@@ -57,8 +48,6 @@ async function renderSpecGroup(specSlug: string) {
   const title = getSpecTitle(specSlug);
   if (!specPath || !title) notFound();
 
-  // `<APIPage>` does not auto-discover operations — it requires explicit
-  // `operations` / `webhooks` lists derived from the dereferenced schema.
   const { dereferenced } = await openapi.getSchema(specPath);
 
   const operations: OperationItem[] = [];
@@ -148,22 +137,19 @@ function renderMdxPage(page: NonNullable<ReturnType<typeof source.getPage>>) {
   );
 }
 
-// ─── Static params ──────────────────────────────────────────────────────────
-
 /**
- * Pre-render every portfolio route, including the OpenAPI spec group pages
- * (`/portfolio/api/<slug>`) which are not part of the fumadocs source.
+ * Drops per-operation pages that 404 at runtime but would otherwise
+ * pollute the static export as empty HTML shells.
  */
 export async function generateStaticParams() {
-  const params = source.generateParams();
-  const specGroupSlugs = Object.keys(SPECS).map((slug) => ({
-    slug: ['api', slug],
-  }));
+  const SPEC_KEYS = new Set(Object.keys(SPECS));
+  const sourceParams = source
+    .generateParams()
+    .filter((p) => !(p.slug[0] === 'api' && !SPEC_KEYS.has(p.slug[1])));
+  const specGroupParams = Object.keys(SPECS).map((slug) => ({ slug: ['api', slug] }));
 
-  return [{ slug: [] }, ...specGroupSlugs, ...params];
+  return [{ slug: [] }, ...specGroupParams, ...sourceParams];
 }
-
-// ─── Metadata ───────────────────────────────────────────────────────────────
 
 export async function generateMetadata(
   props: PageProps<'/portfolio/[[...slug]]'>,
@@ -171,7 +157,6 @@ export async function generateMetadata(
   const params = await props.params;
   const slug = params.slug ?? [];
 
-  // OpenAPI spec group pages: read title from SPECS.
   if (slug[0] === 'api' && slug.length === 2) {
     const title = getSpecTitle(slug[1]);
     return title ? { title } : {};

@@ -3,14 +3,10 @@ import Link from 'next/link';
 
 import { formatPostDate, getSortedPosts, groupPostsByYear } from '@/lib/blog';
 
-// ─── Metadata ───────────────────────────────────────────────────────────────
-
 export const metadata: Metadata = {
   title: 'Blog',
   description: 'Posts and notes.',
 };
-
-// ─── Page ───────────────────────────────────────────────────────────────────
 
 export default function BlogIndexPage() {
   const groups = groupPostsByYear(getSortedPosts());
@@ -50,8 +46,6 @@ export default function BlogIndexPage() {
     </main>
   );
 }
-
-// ─── Local types ────────────────────────────────────────────────────────────
 
 type BlogPostData = {
   date: string | Date;

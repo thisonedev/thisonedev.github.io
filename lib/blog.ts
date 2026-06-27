@@ -8,22 +8,15 @@ export const blog = loader({
 });
 
 type BlogPost = ReturnType<typeof blog.getPages>[number];
+type PostData = {
+  date: string | Date;
+  description?: string;
+};
 
-// ─── Date helpers ───────────────────────────────────────────────────────────
-
-/**
- * Front matter `date` can come back as either a string ("2026-04-15") or an
- * already-parsed Date, depending on how the YAML scalar is written. Anchor
- * it to UTC midnight so formatting never shifts by a day depending on the
- * server/browser timezone.
- */
 function toUTCDate(value: string | Date): Date {
   return value instanceof Date ? value : new Date(`${value}T00:00:00Z`);
 }
 
-// ─── Sorting & grouping ─────────────────────────────────────────────────────
-
-/** Posts in newest-first order. */
 export function getSortedPosts(): BlogPost[] {
   return [...blog.getPages()].sort((a, b) => {
     const aDate = toUTCDate((a.data as PostData).date);
@@ -32,11 +25,6 @@ export function getSortedPosts(): BlogPost[] {
   });
 }
 
-/**
- * Groups posts by year. Since the input is expected to already be sorted
- * newest-first (see `getSortedPosts`), years come out in descending order
- * for free, matching a Jekyll-style archive.
- */
 export function groupPostsByYear(posts: BlogPost[]): [number, BlogPost[]][] {
   const groups = new Map<number, BlogPost[]>();
 
@@ -50,9 +38,6 @@ export function groupPostsByYear(posts: BlogPost[]): [number, BlogPost[]][] {
   return [...groups.entries()];
 }
 
-// ─── Formatting ─────────────────────────────────────────────────────────────
-
-/** "Apr 15" — used in the archive list. */
 export function formatPostDate(value: string | Date): string {
   return toUTCDate(value).toLocaleDateString('en-US', {
     month: 'short',
@@ -61,7 +46,6 @@ export function formatPostDate(value: string | Date): string {
   });
 }
 
-/** "April 15, 2026" — used on the post page itself. */
 export function formatFullPostDate(value: string | Date): string {
   return toUTCDate(value).toLocaleDateString('en-US', {
     month: 'long',
@@ -70,10 +54,3 @@ export function formatFullPostDate(value: string | Date): string {
     timeZone: 'UTC',
   });
 }
-
-// ─── Local types ────────────────────────────────────────────────────────────
-
-type PostData = {
-  date: string | Date;
-  description?: string;
-};

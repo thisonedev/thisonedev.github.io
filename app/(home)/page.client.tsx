@@ -30,8 +30,6 @@ const Dithering = dynamic(
   { ssr: false },
 );
 
-// ─── Hero ────────────────────────────────────────────────────────────────────
-
 export function Hero() {
   const { resolvedTheme } = useTheme();
   const ref = useRef<HTMLImageElement | null>(null);
@@ -83,8 +81,6 @@ export function Hero() {
     </>
   );
 }
-
-// ─── PreviewImages ────────────────────────────────────────────────────────────
 
 const previewButtonVariants = cva('w-24 h-8 text-sm font-medium transition-colors rounded-full', {
   variants: {
@@ -153,8 +149,6 @@ export function PreviewImages(props: ComponentProps<'div'>) {
   );
 }
 
-// ─── Writing / Expertise Tabs ─────────────────────────────────────────────────
-
 const ExpertiseTabs = [
   { name: 'API Refs', value: 'writer' },
   { name: 'CLIs & Apps', value: 'developer' },
@@ -207,8 +201,6 @@ export function Writing({
   );
 }
 
-// ─── Process Strip ────────────────────────────────────────────────────────────
-
 const PROCESS_STEPS = [
   {
     number: '01',
@@ -246,7 +238,6 @@ export function ProcessStrip() {
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-5">
         {PROCESS_STEPS.map((step, i) => (
           <div key={step.number} className="flex flex-col">
-            {/* Connector line — hidden on the last item */}
             <div className="flex items-center gap-2 mb-3">
               <span className="text-xs font-mono text-brand font-bold">{step.number}</span>
               {i < PROCESS_STEPS.length - 1 && (
@@ -262,8 +253,6 @@ export function ProcessStrip() {
   );
 }
 
-// ─── AgnosticBackground ───────────────────────────────────────────────────────
-
 export function AgnosticBackground() {
   const ref = useRef<HTMLDivElement>(null);
   const visible = useIsVisible(ref);
@@ -275,7 +264,7 @@ export function AgnosticBackground() {
     >
       <Dithering
         colorBack="#00000000"
-        colorFront="#7a9e6e" /* muted sage — natural complement to teal-green primary */
+        colorFront="#7a9e6e"
         shape="warp"
         type="4x4"
         speed={visible ? 0.4 : 0}
@@ -285,8 +274,6 @@ export function AgnosticBackground() {
     </div>
   );
 }
-
-// ─── Shared utility: IntersectionObserver hook ────────────────────────────────
 
 let observer: IntersectionObserver;
 const observerTargets = new WeakMap<Element, (entry: IntersectionObserverEntry) => void>();

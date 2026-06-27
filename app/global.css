@@ -4,7 +4,7 @@
 @import "fumadocs-openapi/css/preset.css";
 @plugin "tailwindcss-animate";
 
-/* ─── Tailwind theme tokens ──────────────────────────────────────────────── */
+/* ─── Theme tokens ────────────────────────────────────────────────────────── */
 
 @theme {
   /* fumadocs colors (light mode defaults) */
@@ -25,29 +25,24 @@
   --color-fd-popover-foreground: hsl(222, 47%, 11%);
   --color-fd-ring: hsl(162, 91%, 30%);
 
-  /* custom brand (light mode — Earthy Harmony palette)
-     #3B6255 deep forest  · #8BA49A muted sage  · #D2C49E warm sand
-     #CBDED3 pale mint    · #E2DFDA linen                            */
-  --color-brand: #3b6255; /* deep forest — headings, active states */
-  --color-brand-foreground: #e2dfda; /* linen — text on brand bg */
-  --color-brand-200: #8ba49a; /* muted sage — softer accents */
-  --color-brand-secondary: #d2c49e; /* warm sand — complementary accent */
-  --color-brand-secondary-foreground: #3b6255; /* deep forest on sand */
+  /* custom brand — Earthy Harmony palette */
+  --color-brand: #3b6255;
+  --color-brand-foreground: #e2dfda;
+  --color-brand-200: #8ba49a;
+  --color-brand-secondary: #d2c49e;
+  --color-brand-secondary-foreground: #3b6255;
 
-  /* landing foreground (light mode) */
-  --color-landing-foreground: #3b6255; /* deep forest */
-  --color-landing-foreground-200: #8ba49a; /* muted sage */
+  --color-landing-foreground: #3b6255;
+  --color-landing-foreground-200: #8ba49a;
 
-  /* layout */
   --spacing-page: 1436px;
 }
 
 @theme inline {
   --default-mono-font-family: var(--font-mono);
 
-  /* animations */
   --animate-marquee: marquee var(--duration) infinite linear;
-  --animate-marquee-vertical: marquee-vertical var(--duration) linear infinite;
+  --animate-marquee-vertical: marquee-vertical var(--duration) linear linear;
   --animate-stroke: stroke 5s linear infinite;
 
   @keyframes marquee {
@@ -78,7 +73,6 @@
     }
   }
 
-  /* gradient helpers */
   --color-gradient-radial: radial-gradient(circle, var(--tw-gradient-stops));
   --color-repeat-gradient-to-r: repeating-linear-gradient(to right, var(--tw-gradient-stops));
   --color-repeat-gradient-to-br: repeating-linear-gradient(
@@ -87,18 +81,12 @@
   );
 }
 
-/* ─── CSS custom properties ──────────────────────────────────────────────── */
+/* ─── Layout tokens ───────────────────────────────────────────────────────── */
 
 :root {
-  /* fumadocs layout */
   --fd-layout-width: 1280px;
   --fd-sidebar-width: 260px;
   --fd-toc-width: 224px;
-
-  /* doc-type theme overrides */
-  /* --headless-color:  hsl(250, 80%, 54%);
-  --framework-color: hsl(41, 100%, 40%);
-  --ui-color:        hsl(217, 100%, 58%); */
 }
 
 .dark {
@@ -110,7 +98,6 @@
   --color-fd-border: hsl(216, 34%, 17%);
   --color-fd-card: hsl(222, 47%, 9%);
   --color-fd-card-foreground: hsl(213, 31%, 91%);
-  /* --color-fd-primary:                 hsl(162, 91%, 40%); */
   --color-fd-primary: #aacbbe;
   --color-fd-primary-foreground: hsl(223, 47%, 13%);
   --color-fd-secondary: hsl(223, 47%, 13%);
@@ -121,16 +108,15 @@
   --color-fd-popover-foreground: hsl(213, 31%, 91%);
   --color-fd-ring: hsl(162, 91%, 40%);
 
-  /* custom brand (dark mode — palette lifted, lightened for dark bg) */
-  --color-brand: #cbded3; /* pale mint — softer highlights */
-  --color-brand-200: #aacbbe; /* muted sage — readable on dark */
-  --color-brand-foreground: #3b6255; /* deep forest on sage */
-  --color-brand-secondary: #d2c49e; /* warm sand stays the same */
+  /* custom brand (dark mode) */
+  --color-brand: #cbded3;
+  --color-brand-200: #aacbbe;
+  --color-brand-foreground: #3b6255;
+  --color-brand-secondary: #d2c49e;
   --color-brand-secondary-foreground: #3b6255;
 
-  /* landing foreground (dark mode) */
-  --color-landing-foreground: #cbded3; /* pale mint */
-  --color-landing-foreground-200: #aacbbe; /* muted sage */
+  --color-landing-foreground: #cbded3;
+  --color-landing-foreground-200: #aacbbe;
 
   /* doc-type theme overrides */
   --headless-color: hsl(250, 100%, 80%);
@@ -150,14 +136,14 @@
   --color-fd-primary: var(--framework-color);
 }
 
-/* ─── Base styles ────────────────────────────────────────────────────────── */
+/* ─── Base ────────────────────────────────────────────────────────────────── */
 
 body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ─── fumadocs component tweaks ──────────────────────────────────────────── */
+/* ─── Fumadocs tweaks ─────────────────────────────────────────────────────── */
 
 #nd-page .prose a[data-card] {
   margin-bottom: 10px;
@@ -167,4 +153,63 @@ body {
 }
 button[data-theme-toggle] {
   order: 999;
+}
+
+/* ─── Layout fixes ────────────────────────────────────────────────────────── */
+
+/* Let grid items and article children shrink below their intrinsic
+   content size — otherwise wide images/tables blow out the column on mobile. */
+#nd-notebook-layout > *,
+#nd-page > * {
+  min-width: 0;
+}
+
+/* Wide tables/pre scroll within themselves; overflow-x on the article
+   would force overflow-y to auto and create a competing scroll context. */
+#nd-page table,
+#nd-page pre {
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+/* Mobile: Fumadocs inlines a 5-col desktop grid onto the notebook layout
+   at every viewport, which auto-sizes the main track to wide content and
+   overflows the viewport. Collapse to a single column below xl. */
+@media (max-width: 1279.98px) {
+  #nd-notebook-layout {
+    grid-template-areas:
+      "header"
+      "toc-popover"
+      "main" !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto 1fr !important;
+  }
+}
+
+/* Desktop: sidebar flush-left, main fills the middle, TOC on the right. */
+@media (min-width: 1280px) {
+  #nd-notebook-layout {
+    grid-template-areas:
+      "sidebar sidebar header header ."
+      "sidebar sidebar toc-popover toc-popover ."
+      "sidebar sidebar main toc ." !important;
+    grid-template-columns:
+      0
+      var(--fd-sidebar-col)
+      minmax(0, 1fr)
+      var(--fd-toc-width)
+      0 !important;
+    grid-template-rows: auto auto 1fr !important;
+  }
+}
+
+#nd-page {
+  width: 100%;
+}
+
+@media (min-width: 1280px) {
+  #nd-page {
+    padding-inline: 3rem;
+  }
 }

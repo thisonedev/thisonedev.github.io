@@ -5,8 +5,6 @@ import { notFound } from 'next/navigation';
 import { getMDXComponents } from '@/components/mdx';
 import { blog, formatFullPostDate } from '@/lib/blog';
 
-// ─── Page ───────────────────────────────────────────────────────────────────
-
 export default async function Page(props: { params: Promise<{ slug: string }> }) {
   const { slug } = await props.params;
   const page = blog.getPage([slug]);
@@ -31,15 +29,11 @@ export default async function Page(props: { params: Promise<{ slug: string }> })
   );
 }
 
-// ─── Static params ──────────────────────────────────────────────────────────
-
 export function generateStaticParams() {
   return blog.getPages().map((page) => ({
     slug: page.slugs[0],
   }));
 }
-
-// ─── Metadata ───────────────────────────────────────────────────────────────
 
 export async function generateMetadata(props: {
   params: Promise<{ slug: string }>;
@@ -53,8 +47,6 @@ export async function generateMetadata(props: {
     description: (page.data as BlogPostData).description,
   };
 }
-
-// ─── Local types ────────────────────────────────────────────────────────────
 
 type BlogPostData = {
   body: React.ComponentType<{ components?: Record<string, unknown> }>;

@@ -18,13 +18,16 @@ export const docs = defineDocs({
 });
 
 // Blog posts. Every .mdx file dropped into `content/blog` is picked up
-// automatically
+// automatically.
 export const blogPosts = defineCollections({
   type: 'doc',
   dir: 'content/blog',
   schema: pageSchema.extend({
     date: z.string().date().or(z.date()),
   }),
+  postprocess: {
+    includeProcessedMarkdown: true,
+  },
 });
 
 export default defineConfig({

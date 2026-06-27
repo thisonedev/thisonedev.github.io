@@ -773,7 +773,7 @@ paths:
         - Account
       summary: Get all utxos belonging to the given address
       description: |
-        **Note:** This is a performance-intensive call. Use it only when the chain is byzantine and you need to retrieve utxo information to exit. In most cases, use the Informational API's [Account - Get Utxos](http://TODO) endpoint instead; this endpoint exists only as a fallback for when the Informational API is unavailable.
+        **Note:** This is a performance-intensive call. Use it only when the chain is byzantine and you need to retrieve utxo information to exit. In most cases, use the Informational API's `Account - Get Utxos` endpoint instead; this endpoint exists only as a fallback for when the Informational API is unavailable.
       operationId: account_get_exitable_utxos
       requestBody:
         description: HEX-encoded address of the account

@@ -7,8 +7,6 @@ import { getPageImage, source } from '@/lib/source';
 
 export const revalidate = false;
 
-// ─── Route ──────────────────────────────────────────────────────────────────
-
 export async function GET(_req: Request, { params }: RouteContext<'/og/[...slug]'>) {
   const { slug } = await params;
   const page = source.getPage(slug.slice(0, -1));
@@ -22,8 +20,6 @@ export async function GET(_req: Request, { params }: RouteContext<'/og/[...slug]
     },
   );
 }
-
-// ─── Static params ──────────────────────────────────────────────────────────
 
 export function generateStaticParams() {
   return source.getPages().map((page) => ({

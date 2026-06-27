@@ -3,14 +3,10 @@ import { Mail } from 'lucide-react';
 
 import { appName, gitConfig } from '@/lib/shared';
 
-/**
- * Shared layout options for every DocsLayout / HomeLayout in the app.
- * Customize the nav, links, and GitHub URL here once.
- */
+/** Shared layout options for every DocsLayout / HomeLayout in the app. */
 export function baseOptions(): BaseLayoutProps {
   return {
     nav: {
-      // JSX supported
       title: appName,
     },
     githubUrl: `https://github.com/${gitConfig.user}/${gitConfig.repo}`,

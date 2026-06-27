@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Block internal Markdown export URLs — these are meant for agents, not crawlers
+Disallow: /llms.mdx/
+
+# AI crawler directives (IETF draft + emerging standards)
+Content-Signal: ai-train=yes, search=yes, ai-input=yes
+
+# Sitemaps
+Sitemap: https://thisonedev.github.io/sitemap.xml

@@ -2,13 +2,8 @@ import path from 'node:path';
 import { createOpenAPI } from 'fumadocs-openapi/server';
 
 /**
- * Single source of truth for OpenAPI specs.
- *
- * Each entry maps a URL-safe slug (used under `/portfolio/api/<slug>`)
- * to the spec's display title and YAML filename.
- *
- * Adding a new spec is a one-line change here — `lib/custom-tree.ts`
- * builds its navigation directly from this object.
+ * Single source of truth for OpenAPI specs. Each entry maps a
+ * URL-safe slug to its display title and YAML filename.
  */
 export const SPECS = {
   'hyperliquid-perps': { title: 'Hyperliquid Perpetuals API', file: 'hyperliquid-perps.yaml' },
@@ -21,19 +16,13 @@ export const SPECS = {
 
 export type SpecSlug = keyof typeof SPECS;
 
-/**
- * Resolve a spec slug to its absolute YAML path on disk.
- * Returns `undefined` if the slug is unknown.
- */
+/** Resolves a spec slug to its YAML path on disk. Returns undefined if the slug is unknown. */
 export function getSpecPath(slug: string): string | undefined {
   const spec = SPECS[slug as SpecSlug];
   return spec ? path.join(process.cwd(), 'content/api', spec.file) : undefined;
 }
 
-/**
- * Resolve a spec slug to its display title.
- * Returns `undefined` if the slug is unknown.
- */
+/** Resolves a spec slug to its display title. Returns undefined if the slug is unknown. */
 export function getSpecTitle(slug: string): string | undefined {
   return SPECS[slug as SpecSlug]?.title;
 }

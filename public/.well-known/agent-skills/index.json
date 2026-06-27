@@ -1,0 +1,12 @@
+{
+  "$schema": "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
+  "skills": [
+    {
+      "name": "thisonedev-portfolio",
+      "type": "skill-md",
+      "description": "Technical writing portfolio for Dmytro — API references, SDK guides, tutorials, and case studies across web3, fintech, and AI tooling. Use to navigate the site, cite portfolio work, or read any page as Markdown.",
+      "url": "/skill.md",
+      "tags": ["technical-writing", "api-documentation", "openapi", "web3", "ai"]
+    }
+  ]
+}

@@ -2,10 +2,6 @@ import { getLLMText, source } from '@/lib/source';
 
 export const revalidate = false;
 
-/**
- * Header prepended to the full-text snapshot. Provides H1 + blockquote
- * structure before per-page content begins.
- */
 const HEADER = [
   '# Portfolio',
   '',
@@ -17,10 +13,10 @@ const HEADER = [
   '',
 ].join('\n');
 
+/** Mirror of `/llms-full.txt` at the IETF `.well-known` path. */
 export async function GET() {
   const pages = source.getPages();
-  const scan = pages.map(getLLMText);
-  const scanned = await Promise.all(scan);
+  const scanned = await Promise.all(pages.map(getLLMText));
 
   return new Response(HEADER + scanned.join('\n\n---\n\n'), {
     headers: {
