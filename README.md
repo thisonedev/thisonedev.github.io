@@ -14,10 +14,10 @@ The portfolio contains 60+ MDX pages organized into nine sections, plus six full
 
 | Client | What I shipped | Impact |
 |---|---|---|
-| [OMG Network](/portfolio/case-studies/omg-network/) | Docusaurus portal rebuild, omg-js samples app, exchange & wallet guides | Integration time 2h → 3m |
-| [Chainlink](/portfolio/case-studies/chainlink/) | Migration to open-source Eleventy, integration guides for every new feed | Support volume −30–40% |
-| [Myria](/portfolio/case-studies/myria/) | Portal from scratch, SDK references, TypeScript samples app | Partner integration −70–80% |
-| [Paytomat](/portfolio/case-studies/paytomat/) | Content strategy, whitepapers, NCR/Poster/1C API docs | Engagement +35–45% |
+| [OMG Network](/content/portfolio/case-studies/omg-network.mdx) | Docusaurus portal rebuild, omg-js samples app, exchange & wallet guides | Integration time 2h → 3m |
+| [Chainlink](/content/portfolio/case-studies/chainlink.mdx) | Migration to open-source Eleventy, integration guides for every new feed | Support volume −30–40% |
+| [Myria](/content/portfolio/case-studies/myria.mdx) | Portal from scratch, SDK references, TypeScript samples app | Partner integration −70–80% |
+| [Paytomat](/content/portfolio/case-studies/paytomat.mdx) | Content strategy, whitepapers, NCR/Poster/1C API docs | Engagement +35–45% |
 
 ---
 
