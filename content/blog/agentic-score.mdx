@@ -1,0 +1,405 @@
+---
+title: Pushing the barriers of the Mintlify Agent Score
+description: "Pushing the barriers of the Mintlify Agent Score on a static Fumadocs site: the five problems I hit getting to 93, the deploys that broke it, and a step-by-step guide for replicating the setup without the mistakes"
+date: 2026-06-28
+---
+
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Steps, Step } from 'fumadocs-ui/components/steps';
+
+I spent this Friday night with one goal in mind: get a Grade A on the Mintlify Agent Score for my portfolio. That is the score [AFDocs](https://www.mintlify.com/score) runs against any docs site to measure how well AI agents can actually use it.
+
+The site in question is the Fumadocs portfolio you are reading this on, hosted at `thisonedev.github.io` with no server runtime, no edge functions, and no headless CMS behind it. I started at 73 and finished at 93 over the course of one Friday night. This post is the actual work, including the two changes that briefly pushed the score back down before I figured out why.
+
+## Why a technical writer should care about the Agent Score
+
+The framing that pushed me to take the score seriously comes from Mintlify themselves, and it is worth quoting because it captures the whole context in three sentences:
+
+> The new age of documentation isn't written for just humans anymore, it's written for the agents they send ahead. Your docs have two readers now, the developer and the agent they sent ahead. Agents read at machine speed and skip past pages they can't parse.
+
+That is the pitch, and it is the part most docs teams are still ignoring. A developer hitting a 404 will click the back button. An agent hitting the same page gets dropped from the session, and the model picks another source.
+
+[AFDocs](https://www.mintlify.com/score) turns that intuition into a checklist. The Agent Score crawls your site the way an agent would, runs around thirty checks, and reports what is missing. Most of the checks map to specific files or metadata that either exist on the site or do not.
+
+The score is just a summary. AFDocs gives you the failing check with the file or pattern that would satisfy it.
+
+## Why I did this on my own portfolio
+
+Three reasons, and they all came up against my own portfolio first.
+
+1. I wanted to sharpen a skill that does not yet sit in most job descriptions. The agent-readiness checklist is a real skill set, on the same level as knowing how to write a clean OpenAPI spec or structure a release notes page. The only way I have ever made any technical writing skill automatic is to run the workflow end to end on something that ships, and my own portfolio was the cheapest surface I had.
+2. I wanted to stay current. Mintlify and Fumadocs are both moving fast on this, and so is AFDocs. The recommendations that worked six months ago are not always the recommendations that work now, and building this against my own site keeps me honest about what I am telling clients to do.
+3. I wanted to dogfood the workflow. A portfolio site for a technical writer is the ideal surface to test agent-readiness claims on. If I cannot make my own portfolio score well, I have no business telling a protocol team how to make theirs.
+
+## Where 73 was
+
+By the time I started caring about the score, the site already had 60+ MDX pages and six OpenAPI specs rendered as reference pages. A working sitemap and a robots.txt were already in place.
+
+It did not have `llms.txt`, `llms-full.txt`, `skill.md`, or any structured agent manifest. It did not serve Markdown on the wire for any path. The sitemap's `<loc>` entries were inconsistent with the page list. None of these were hard problems to fix. They were files the site had never generated.
+
+The 73→93 path split into two parts. Most of the points came from cleaning up the OpenAPI rendering and fixing redirect loops, then getting the sitemap and the page list to agree. None of that was agent-readiness work. It was the prerequisite for any of the checks to even register. That work is its own post. The rest was the smaller agent-readiness work on top of it, five problems I hit and how I solved each one.
+
+## Problem 1: nothing on the site advertised itself to agents
+
+AFDocs has four discovery checks: `llms.txt`, `llms-full.txt`, `skill.md`, and an agent manifest at `.well-known/`. None of those existed. Each one is a small file, but they need to agree on a few things, especially the URLs.
+
+`llms.txt` lists every page as a Markdown link. `llms-full.txt` is the same plus the full body of every page concatenated. `skill.md` describes the site's shape so an agent can decide whether to engage. The agent manifest is structured metadata following a protocol Mintlify pushes.
+
+All four need to share a single URL builder, or coverage checks start disagreeing with each other the moment a page gets added. Step 1 builds all four files together, including that URL builder.
+
+## Problem 2: agents could not get the raw Markdown for any page
+
+AFDocs wants to fetch the raw Markdown for any page with the correct `text/markdown` content type, so an agent can skip the HTML→Markdown guessing step.
+
+On a Fumadocs site, the cleanest way to do that is a single catch-all route that returns the MDX source. The Fumadocs source object already knows how to render any page to text, so the route dispatches by URL shape and writes the body.
+
+Two subtleties caught me out. The static site export creates the route directory but does not always write the `.md` sibling file, so a postbuild script has to spin up `next dev` and fetch each page's MD URL, then write the body to disk. A crawler that appends `.md` to the HTML URL it landed on still expects a working response, so the same postbuild script mirrors each file to the matching public path, closing both checks at once. Step 2 builds the route. Step 3 sets up the mirror.
+
+## Problem 3: the sitemap and `llms.txt` disagreed on which URLs mattered
+
+The sitemap I shipped first listed each page's HTML URL as the `<loc>`. AFDocs was happy enough with that, but coverage was weak because `llms.txt` was using Markdown URLs and the two files did not line up.
+
+I tried the "cleaner" version next: HTML canonical URLs in `<loc>` with `xhtml:link` Markdown alternates. That looked tidier. It broke the coverage check, because AFDocs was now seeing two different sets of "real" URLs depending on which file it picked.
+
+I made the two files agree. The sitemap now lists the Markdown URL as the `<loc>`, and `llms.txt` uses the same URL. The HTML pages still exist at their canonical URLs, and the Markdown URL resolves to the same content. AFDocs accepts this, so coverage went back to 100% and has stayed there. Step 4 contains the full route.
+
+Consistency is what matters: same URL format in `llms.txt` and the sitemap, and AFDocs treats them as one set of real URLs. The strictly correct format would be HTML in `<loc>` with Markdown alternates. The format that actually works is the one the rest of the system also uses.
+
+## Problem 4: the LLMS directive kept falling out of the agent's view
+
+The LLMS directive is a small blockquote AFDocs expects near the top of every page, pointing at `llms.txt` and `llms-full.txt`. AFDocs treats it as the agent-readable "you are here" marker. If it sits too deep in the HTML stream, the check warns even when the directive is technically present.
+
+On the site, the directive lives in `app/layout.tsx` inside a `<blockquote className="sr-only">`. The first version placed it inside the `#content-area` div. That put it after `<RootProvider>` and any header component, so AFDocs measured its position at roughly 2.7% on `/`, 17.4% on `/blog/`, and 4.9% on `/portfolio/`. Two of those were under the threshold. `/blog/` was not.
+
+I tried to fix `/blog/` by reordering the page's `<header>` and `<article>` using CSS grid, which moved the h1 from 32% to 19% but also pushed the LLMS directive deeper in the DOM. The directive check went from pass to warning.
+
+Migrate the blockquote out of `#content-area` to be a direct child of `<body>`. It then sits earlier in the HTML stream on every page regardless of how the inner layout wraps things. Step 5 covers the exact placement.
+
+## Problem 5: `llms-full.txt` had grown past agent truncation limits
+
+`llms-full.txt` started as a small dump and ended up at 741KB once the portfolio had 60+ pages. The discovery check still passed, because AFDocs could find the file at both `/llms-full.txt` and `/.well-known/llms-full.txt`. The size check was a different story.
+
+Claude Code's web fetch pipeline truncates at roughly 100KB of text before the summarization model ever sees it. Most other agent platforms are similar. The agent docs spec is explicit on the threshold: under 50K is comfortable, 50K to 100K is risky, over 100K is a fail. At 741KB my agents were seeing roughly the first 13% of the file, which was a couple of headers, the early docs, and then nothing. The remaining 641KB, including the bulk of the corpus, was invisible.
+
+A root `llms-full.txt` becomes a small index pointing at per-section files (`/llms-full.txt/case-studies.md`, `/llms-full.txt/chainlink.md`, and so on), each under 50K characters. An agent reads the index, picks the section it needs, and fetches only that. Coverage goes back to 100%, and the per-section files stay under the truncation line. Step 6 builds the splitter.
+
+## What did not survive
+
+Two changes I shipped dropped the score instead of raising it, both while trying to push past 93.
+
+The `/blog/` rebuild from Problem 4 dropped the score because the reorder moved the h1 closer to the top, but it also moved the LLMS directive out of position in the same deploy. I shipped two adjustments at once, both with side effects. The right move was the rebuild first, wait for a rescan, then decide whether the directive move was worth the regression.
+
+A static MCP manifest dropped the score too. AFDocs's MCP check wants to find an MCP server at an expected endpoint, which on the surface sounded like a job for a static JSON file declaring the server. I wrote a `.well-known/mcp.json` with the standard metadata and pointed it at a fictional endpoint. AFDocs did not change the score. I should have seen that coming. The check probes for actual JSON-RPC behavior (initialize, listTools, that kind of thing), not for a manifest that says a server exists somewhere. A JSON file declaring a server does not satisfy a probe that asks the server to do something.
+
+## Why 93 is the ceiling on GitHub Pages
+
+The remaining 7 points split between recoverable work and the static-host ceiling.
+
+The recoverable work is more of the same: tightening the content start position on a couple of pages, plus reducing the gap between rendered Markdown and source HTML on the one page that still has a parity warning, plus splitting `llms-full.txt` into per-section files so the whole corpus is visible to agents. Small adjustments like that. Pushing these would probably take the score into the mid-90s.
+
+The static-host ceiling is two checks that fail by design. Content Negotiation wants the server to respond with `text/markdown` when an agent sends `Accept: text/markdown`, which means swapping the content type header based on what the client asked for. GitHub Pages serves files with the content type they were uploaded as, and there is no hook to change that. The MCP Server check wants the same kind of dynamic behavior, a JSON-RPC endpoint that responds to the MCP protocol.
+
+The two practical ways out are a custom domain pointed at Cloudflare with a Worker that does Accept-header routing and exposes an MCP endpoint, or moving the deployment to Netlify or Cloudflare Pages where edge functions handle both. Either path is real infrastructure work, not a config change. I am leaving the score at 93 for now because the project is a portfolio site, and the right answer for a portfolio is to use the platform you are documenting, not to spin up a Worker so the docs site scores one point higher on a benchmark.
+
+## How to replicate this on a Fumadocs site
+
+I would build it in this order if I were starting over. Each step is small enough to ship and rescan between. Replace `SITE` constants and file paths with your own site's values as you go, and update URL prefixes to match.
+
+<Steps>
+<Step>
+### Add the agent discovery set
+
+Create `lib/llms-txt.ts` with a `buildLlmsTxt()` function that walks the Fumadocs source to format each page as a Markdown link and prepend the site constants. The URL builder is the part everything else depends on, so keep it as one exported function:
+
+```ts
+// lib/llms-txt.ts
+// Replace these three values with your site's name, public URL, and one-line description.
+export const SITE = {
+  title: 'Documentation Portal',
+  baseUrl: 'https://docs.example.com',
+  description: 'API references, SDK guides, and tutorials for our developer platform.',
+} as const;
+
+function mdUrl(page: { url: string }): string {
+  const slug = page.url.replace(/^\//, '').replace(/\/$/, '');
+  return slug
+    ? `${SITE.baseUrl}/llms.mdx/${slug}/content.md`
+    : `${SITE.baseUrl}/llms.mdx/content.md`;
+}
+
+export function buildLlmsTxt(): string {
+  const pages = source.getPages();
+  const docs = pages
+    .filter(isDocPage)
+    .map((page) => {
+      const title = page.data.title;
+      const description = (page.data as { description?: string }).description;
+      return `- [${title}](${mdUrl(page)})${description ? `: ${description}` : ''}`;
+    })
+    .join('\n');
+  // ...assemble the full file
+}
+```
+
+Mirror the result at `/llms.txt` and `/.well-known/llms.txt` so the IETF convention and the practical URL both resolve:
+
+```ts
+// app/.well-known/llms.txt/route.ts
+export function GET() {
+  return new Response(buildLlmsTxt(), { headers: llmsHeaders() });
+}
+```
+
+Add `app/llms-full.txt/route.ts` as a one-shot dump of every page's text:
+
+```ts
+// app/llms-full.txt/route.ts
+export async function GET() {
+  const pages = source.getPages();
+  const scan = pages.map(getLLMText);
+  const scanned = await Promise.all(scan);
+
+  return new Response(HEADER + scanned.join('\n\n---\n\n'), {
+    headers: { 'Content-Type': 'text/markdown; charset=utf-8' },
+  });
+}
+```
+
+Drop `skill.md` into `public/` and write a `public/.well-known/agent-card.json` that points at the skill file. Mintlify's protocol metadata format expects a `skills` array on the manifest:
+
+```json
+{
+  "name": "your-portal",
+  "url": "https://docs.example.com/",
+  "protocolVersion": "0.3",
+  "skills": [
+    {
+      "id": "your-portal",
+      "name": "Documentation Portal",
+      "url": "https://docs.example.com/skill.md"
+    }
+  ]
+}
+```
+
+<Callout type="info">
+  Mintlify generates all four of these automatically as soon as you flip the agent discovery toggle in the dashboard. Fumadocs does not. You build them by hand.
+</Callout>
+</Step>
+<Step>
+### Add the Markdown export route
+
+Create `app/llms.mdx/[[...slug]]/route.ts` with a catch-all that calls `getLLMText(page)` for Fumadocs pages and dispatches to your own helpers for special sections (OpenAPI groups, blog posts). Return the body with `Content-Type: text/markdown`. Register every page as a static param in `generateStaticParams()`, including both the `.md` and the stripped forms so AFDocs hits the same handler after it strips `.md` from the URL:
+
+```ts
+// app/llms.mdx/[[...slug]]/route.ts
+export async function GET(_req: Request, { params }: RouteContext<'/llms.mdx/[[...slug]]'>) {
+  const { slug } = await params;
+  const segments = slug?.slice(0, -1) ?? [];
+
+  if (segments[0] === 'api' && segments.length === 2 && SPEC_SLUGS.has(segments[1])) {
+    return renderSpecGroupMarkdown(segments[1]);
+  }
+
+  if (segments[0] === 'blog' && segments.length === 2) {
+    return renderBlogMarkdown(segments[1]);
+  }
+
+  const page = source.getPage(segments);
+  if (!page) notFound();
+  return new Response(await getLLMText(page), {
+    headers: { 'Content-Type': 'text/markdown' },
+  });
+}
+```
+
+The dispatch on `api` and `blog` is because those sections of the site have their own source loaders. The catch-all part handles everything Fumadocs already knows about.
+</Step>
+<Step>
+### Mirror the Markdown files at build time
+
+Static export creates the route directory but does not always write the `.md` sibling. Add a postbuild script (`scripts/postbuild-md.mjs`) that spins up `next dev` and fetches each page's MD URL, then writes the body to `out/llms.mdx/<path>/content.md`. Mirror each file to `<publicRoot>/<slug>.md` so a crawler that appends `.md` to the HTML URL still gets a working response. Set `publicRoot` to wherever your static host serves the site from:
+
+```js
+// scripts/postbuild-md.mjs
+const publicRoot = 'docs'; // directory your static host serves from
+
+for (const sitemapUrl of sitemapMdUrls) {
+  const pathname = new URL(sitemapUrl).pathname;
+  const res = await fetchWithRetry(`${BASE}${pathname}`);
+  const body = await res.text();
+
+  // canonical path
+  const canonical = path.join(outDir, pathname);
+  await mkdir(path.dirname(canonical), { recursive: true });
+  await writeFile(canonical, body, 'utf8');
+
+  // mirror at <publicRoot>/<slug>.md for crawlers that append .md
+  if (pathname.startsWith('/llms.mdx/')) {
+    const slug = pathname.replace(/^\/llms\.mdx\//, '').replace(/\/content\.md$/, '');
+    if (slug) {
+      const mirror = path.join(outDir, publicRoot, `${slug}.md`);
+      await mkdir(path.dirname(mirror), { recursive: true });
+      await writeFile(mirror, body, 'utf8');
+    }
+  }
+}
+```
+
+<Callout type="info">
+  On Mintlify, the `.md` mirrors are also automatic. The platform serves them at the HTML URL with `.md` appended.
+</Callout>
+</Step>
+<Step>
+### Make the sitemap and `llms.txt` agree
+
+In `app/sitemap.xml/route.ts`, list each page's Markdown URL as the `<loc>`. Use the same URL builder function `lib/llms-txt.ts` exports, so the two files stay in sync. Drop a page list check in `isIncludedPage()` to exclude the marketing homepage and per-operation OpenAPI pages (those render inline on their spec group page, so they have no standalone URL):
+
+```ts
+// app/sitemap.xml/route.ts
+function mdUrlForPage(page: { url: string }): string {
+  const slug = page.url.replace(/^\//, '').replace(/\/$/, '');
+  return slug ? `${SITE_URL}/llms.mdx/${slug}/content.md` : `${SITE_URL}/llms.mdx/content.md`;
+}
+
+function buildEntries(): SitemapEntry[] {
+  const entries: SitemapEntry[] = [];
+  const today = new Date().toISOString().slice(0, 10);
+
+  for (const page of source.getPages()) {
+    if (!isIncludedPage(page)) continue;
+    entries.push({ loc: mdUrlForPage(page), lastmod: today });
+  }
+
+  for (const slug of Object.keys(SPECS)) {
+    entries.push({
+      loc: `${SITE_URL}/llms.mdx/api/${slug}/content.md`,
+      lastmod: today,
+    });
+  }
+
+  return entries;
+}
+```
+
+Sharing the URL builder across `lib/llms-txt.ts` and `app/sitemap.xml/route.ts` is what keeps coverage stable. If one file gets updated and the other does not, AFDocs immediately flags it.
+</Step>
+<Step>
+### Place the LLMS directive as a direct child of `<body>`
+
+In `app/layout.tsx`, put the LLMS directive blockquote at the top of `<body>`, before `<RootProvider>` and before `#content-area`. Keep `className="sr-only"` so it does not affect the visual layout, and tag it `data-agent-docs-index="true"` so it is findable by scrapers that look for the marker:
+
+```tsx
+// app/layout.tsx
+<body className="flex flex-col min-h-screen">
+  <a href="#content-area" className="sr-only ...">Skip to main content</a>
+  <blockquote className="sr-only" data-agent-docs-index="true">
+    <p>
+      For the complete documentation index, see <a href="/llms.txt">llms.txt</a>. A
+      full-text snapshot is also available at <a href="/llms-full.txt">llms-full.txt</a>.
+    </p>
+  </blockquote>
+
+  <RootProvider theme={{ defaultTheme: 'dark' }} search={{ enabled: false }}>
+    <div id="content-area">{children}</div>
+  </RootProvider>
+</body>
+```
+
+The check measures DOM position relative to the full HTML stream, not presence. Placing the directive as a direct child of `<body>` on day one saves a debugging session later when the check reports "warning" on a file that is sitting right there in the source.
+</Step>
+<Step>
+### Split `llms-full.txt` by section when it crosses 50K
+
+Once the full-text dump crosses 50K characters, agent pipelines start truncating it and downstream sections become invisible. Generate per-section files at build time and turn the root into a small index pointing to them:
+
+```ts
+// lib/llms-full-txt.ts (add to existing llms-txt module)
+const SECTIONS = ['case-studies', 'chainlink', 'myria', 'omg-network', 'paytomat', 'portfolio', 'research', 'blog', 'api'] as const;
+type Section = (typeof SECTIONS)[number];
+
+export function buildLlmsFullIndex(): string {
+  const header = [
+    `# ${SITE.title} (full content index)`,
+    '',
+    `> ${SITE.description}`,
+    '',
+    `> For the complete documentation index, see [llms.txt](/llms.txt). A full-text snapshot is also available per section below.`,
+    '',
+    '## Sections',
+    '',
+  ];
+  const links = SECTIONS
+    .map((s) => `- [${s}](${SITE.baseUrl}/llms-full.txt/${s}.md)`)
+    .join('\n');
+  return header.concat(links).join('\n');
+}
+
+export function buildLlmsFullSection(section: Section): string {
+  const pages = source.getPages().filter((p) => {
+    const u = p.url.replace(/^\//, '').replace(/\/$/, '');
+    return u === section || u.startsWith(`${section}/`);
+  });
+  return pages
+    .map((p) => {
+      const body = getLLMText(p);
+      return Promise.resolve(body).then((b) => `## ${p.data.title}\n\n${b}`);
+    })
+    .reduce((acc, p) => acc.then((a) => a.then((s) => s + '\n\n---\n\n' + p)), Promise.resolve(''));
+}
+```
+
+Replace the existing `app/llms-full.txt/route.ts` with the index, then add a per-section route:
+
+```ts
+// app/llms-full.txt/route.ts
+export function GET() {
+  return new Response(buildLlmsFullIndex(), { headers: llmsHeaders() });
+}
+
+// app/llms-full.txt/[section]/route.ts
+export async function GET(_req: Request, { params }: RouteContext<'/llms-full.txt/[section]'>) {
+  const { section } = await params;
+  if (!(SECTIONS as readonly string[]).includes(section)) return new Response('Not Found', { status: 404 });
+  return new Response(await buildLlmsFullSection(section as Section), { headers: llmsHeaders() });
+}
+```
+
+Finally, extend the postbuild script to fetch and mirror each section file:
+
+```js
+// scripts/postbuild-md.mjs (add to existing loop)
+for (const section of SECTIONS) {
+  const res = await fetchWithRetry(`${BASE}/llms-full.txt/${section}`);
+  if (!res.ok) continue;
+  const body = await res.text();
+  await mkdir(path.join(outDir, 'llms-full.txt'), { recursive: true });
+  await writeFile(path.join(outDir, `llms-full.txt/${section}.md`), body, 'utf8');
+}
+```
+
+Run a rescan after this lands. The size check on the root `llms-full.txt` flips from fail to pass the moment the index replaces the monolithic dump, and the per-section files start showing up in the coverage check.
+
+</Step>
+<Step>
+### Rescan and stop
+
+Push and rescan, then stop chasing. If the agent score is in the low 90s on a static host, the marginal point costs more time than it is worth. Either accept that as the ceiling or move to a host with edge functions.
+</Step>
+</Steps>
+
+## Mintlify vs Fumadocs: the honest comparison
+
+Mintlify is easier for this entire checklist. Most of the agent-readiness files (`llms.txt`, `llms-full.txt`, `skill.md`, `.well-known/agent-card.json`) are auto-generated as soon as you flip the toggle in the dashboard. The `.md` mirrors are automatic. The LLMS directive is rendered automatically. The only checks Mintlify does not handle out of the box are Content Negotiation and MCP Server, both of which it proxies through its own edge anyway.
+
+Fumadocs gives you the building blocks and trusts you to assemble the agent-readiness layer yourself. That is more work, but it also means you control the URL format and directive placement directly, with the sitemap shape as a third lever. For a portfolio or a docs site with specific structural needs, the extra control is worth it. For a typical product docs site where Mintlify's defaults are good enough, Mintlify is the easier path and the path I would recommend to most teams.
+
+The agent discovery files are where the easy points live, and they are an afternoon of work. `llms.txt` with one line per page, `llms-full.txt` dumped from the same source, plus `skill.md` describing the site's shape. The Markdown export route is the next hour. The sitemap is the hour after that. None of those changes risk anything, and together they should land a Fumadocs or Docusaurus site in the low 90s.
+
+One thing that catches people after the easy points: `llms-full.txt` grows with the corpus, and once it crosses 50K characters agents start truncating it. Split it by section before it crosses 100K. A 60-page portfolio was already at 741K in my case, which meant agents saw roughly the first 13%. Step 6 covers the split.
+
+The two checks worth ignoring are Content Negotiation and MCP Server, unless the project already has the infrastructure for them. A static manifest hack for MCP was tried and rejected by AFDocs. A static Accept-header router does not exist by definition. Both want a runtime in front of the site.
+
+The one trap I did not see coming was the LLMS directive. Place it as a direct child of `<body>` on day one and you will save yourself an afternoon of debugging why a check is at "warning" when the file is sitting right there in the source. The check measures DOM position relative to the full HTML stream, not presence.
+
+The rest is just the kind of plumbing that anyone who has shipped docs before can pick up.
