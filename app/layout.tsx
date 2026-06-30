@@ -77,10 +77,8 @@ export default function Layout({ children }: LayoutProps<'/'>) {
           Skip to main content
         </a>
         <blockquote className="sr-only" data-agent-docs-index="true">
-          <p>
-            For the complete documentation index, see <a href="/llms.txt">llms.txt</a>. A
-            full-text snapshot is also available at <a href="/llms-full.txt">llms-full.txt</a>.
-          </p>
+          For the complete documentation index, see <a href="/llms.txt">llms.txt</a>. A
+          full-text snapshot is also available at <a href="/llms-full.txt">llms-full.txt</a>.
         </blockquote>
 
         <RootProvider theme={{ defaultTheme: 'dark' }} search={{ enabled: false }}>
