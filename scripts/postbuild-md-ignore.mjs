@@ -17,6 +17,9 @@ const TAG_PATTERNS = [
   /<div\b[^>]*\bdata-toc-popover-content[^>]*>/,
   /<div\b[^>]*\bdata-page-footer[^>]*>/,
   /<a\b[^>]*\bhref="#content-area"[^>]*>/,
+  /<p\b[^>]*\bclass="text-lg text-fd-muted-foreground mb-0"[^>]*>/,
+  /<div\b[^>]*\bclass="flex flex-row gap-2 items-center border-b pb-6"[^>]*>/,
+  /<div\b[^>]*\bclass="@container grid gap-4 grid-cols-2"[^>]*>/,
 ];
 
 const ATTR = 'data-markdown-ignore="true"';
