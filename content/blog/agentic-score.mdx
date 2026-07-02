@@ -1,25 +1,25 @@
 ---
 title: Pushing the barriers of the Mintlify Agent Score
-description: "Pushing the barriers of the Mintlify Agent Score on a static Fumadocs site: the five problems I hit getting to 93, the deploys that broke it, and a step-by-step guide for replicating the setup without the mistakes"
+description: "Pushing the Mintlify Agent Score from 73 to 93 on a static Fumadocs site"
 date: 2026-06-28
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 
-I spent this Friday night with one goal in mind: get a Grade A on the Mintlify Agent Score for my portfolio. That is the score [AFDocs](https://www.mintlify.com/score) runs against any docs site to measure how well AI agents can actually use it.
+I spent this Friday night with one goal in mind: get a Grade A on the Mintlify Agent Score for the site I manage. That is the score [AFDocs](https://www.mintlify.com/score) runs against any docs site to measure how well AI agents can actually use it.
 
-The site in question is the Fumadocs portfolio you are reading this on, hosted at `thisonedev.github.io` with no server runtime, no edge functions, and no headless CMS behind it. I started at 73 and finished at 93 over the course of one Friday night. This post is the actual work, including the two changes that briefly pushed the score back down before I figured out why.
+The site is the Fumadocs portfolio you are reading this on, hosted on `thisonedev.github.io` as a static export with no server runtime behind it. Pages live as MDX files in the repo. I started at 73 and finished at 93 the same night. This post is the actual work, including the two changes that briefly pushed the score back down before I figured out why.
 
 ## Why a technical writer should care about the Agent Score
 
-The framing that pushed me to take the score seriously comes from Mintlify themselves, and it is worth quoting because it captures the whole context in three sentences:
+The framing that pushed me to take the score seriously is on the [Mintlify Agent Score page](https://www.mintlify.com/score) itself, and it captures the situation cleanly:
 
 > The new age of documentation isn't written for just humans anymore, it's written for the agents they send ahead. Your docs have two readers now, the developer and the agent they sent ahead. Agents read at machine speed and skip past pages they can't parse.
 
 That is the pitch, and it is the part most docs teams are still ignoring. A developer hitting a 404 will click the back button. An agent hitting the same page gets dropped from the session, and the model picks another source.
 
-[AFDocs](https://www.mintlify.com/score) turns that intuition into a checklist. The Agent Score crawls your site the way an agent would, runs around thirty checks, and reports what is missing. Most of the checks map to specific files or metadata that either exist on the site or do not.
+[AFDocs](https://www.mintlify.com/score) turns that intuition into a checklist. The Agent Score crawls your site the way an agent would and runs around thirty checks, then reports back what is missing. Most of the checks map to specific files or metadata that either exist on the site or do not.
 
 The score is just a summary. AFDocs gives you the failing check with the file or pattern that would satisfy it.
 
@@ -55,7 +55,7 @@ On a Fumadocs site, the cleanest way to do that is a single catch-all route that
 
 Two subtleties caught me out. The static site export creates the route directory but does not always write the `.md` sibling file, so a postbuild script has to spin up `next dev` and fetch each page's MD URL, then write the body to disk. A crawler that appends `.md` to the HTML URL it landed on still expects a working response, so the same postbuild script mirrors each file to the matching public path, closing both checks at once. Step 2 builds the route. Step 3 sets up the mirror.
 
-## Problem 3: the sitemap and `llms.txt` disagreed on which URLs mattered
+## Problem 3: the sitemap and `llms.txt` disagreed on which URLs to use
 
 The sitemap I shipped first listed each page's HTML URL as the `<loc>`. AFDocs was happy enough with that, but coverage was weak because `llms.txt` was using Markdown URLs and the two files did not line up.
 
@@ -63,7 +63,7 @@ I tried the "cleaner" version next: HTML canonical URLs in `<loc>` with `xhtml:l
 
 I made the two files agree. The sitemap now lists the Markdown URL as the `<loc>`, and `llms.txt` uses the same URL. The HTML pages still exist at their canonical URLs, and the Markdown URL resolves to the same content. AFDocs accepts this, so coverage went back to 100% and has stayed there. Step 4 contains the full route.
 
-Consistency is what matters: same URL format in `llms.txt` and the sitemap, and AFDocs treats them as one set of real URLs. The strictly correct format would be HTML in `<loc>` with Markdown alternates. The format that actually works is the one the rest of the system also uses.
+Same URL format in `llms.txt` and the sitemap, and AFDocs treats them as one set of real URLs. The strictly correct format would be HTML in `<loc>` with Markdown alternates. The format that actually works is the one the rest of the system also uses.
 
 ## Problem 4: the LLMS directive kept falling out of the agent's view
 
@@ -79,9 +79,9 @@ Migrate the blockquote out of `#content-area` to be a direct child of `<body>`. 
 
 `llms-full.txt` started as a small dump and ended up at 741KB once the portfolio had 60+ pages. The discovery check still passed, because AFDocs could find the file at both `/llms-full.txt` and `/.well-known/llms-full.txt`. The size check was a different story.
 
-Claude Code's web fetch pipeline truncates at roughly 100KB of text before the summarization model ever sees it. Most other agent platforms are similar. The agent docs spec is explicit on the threshold: under 50K is comfortable, 50K to 100K is risky, over 100K is a fail. At 741KB my agents were seeing roughly the first 13% of the file, which was a couple of headers, the early docs, and then nothing. The remaining 641KB, including the bulk of the corpus, was invisible.
+Claude Code's web fetch pipeline truncates at roughly 100KB of text before the summarization model ever sees it. Most other agent platforms are similar. The agent docs spec puts the threshold at around 100K. Under 50K is comfortable; over 100K is a fail. The middle range is risky. At 741KB my agents saw roughly the first 13% of the file. That covered a couple of headers and the early docs; everything past the first 13% was invisible.
 
-A root `llms-full.txt` becomes a small index pointing at per-section files (`/llms-full.txt/case-studies.md`, `/llms-full.txt/chainlink.md`, and so on), each under 50K characters. An agent reads the index, picks the section it needs, and fetches only that. Coverage goes back to 100%, and the per-section files stay under the truncation line. Step 6 builds the splitter.
+A root `llms-full.txt` becomes a small index pointing at per-section files (`/llms-full.txt/case-studies.md`, `/llms-full.txt/chainlink.md`, etc.), each under 50K characters. Once an agent reads the index and picks the section, it fetches only that file. Coverage goes back to 100%, and the per-section files stay under the truncation line. Step 6 builds the splitter.
 
 ## What did not survive
 
@@ -89,17 +89,17 @@ Two changes I shipped dropped the score instead of raising it, both while trying
 
 The `/blog/` rebuild from Problem 4 dropped the score because the reorder moved the h1 closer to the top, but it also moved the LLMS directive out of position in the same deploy. I shipped two adjustments at once, both with side effects. The right move was the rebuild first, wait for a rescan, then decide whether the directive move was worth the regression.
 
-A static MCP manifest dropped the score too. AFDocs's MCP check wants to find an MCP server at an expected endpoint, which on the surface sounded like a job for a static JSON file declaring the server. I wrote a `.well-known/mcp.json` with the standard metadata and pointed it at a fictional endpoint. AFDocs did not change the score. I should have seen that coming. The check probes for actual JSON-RPC behavior (initialize, listTools, that kind of thing), not for a manifest that says a server exists somewhere. A JSON file declaring a server does not satisfy a probe that asks the server to do something.
+A static MCP manifest dropped the score too. AFDocs's MCP check wants to find an MCP server at an expected endpoint, which on the surface sounded like a job for a static JSON file declaring the server. I wrote a `.well-known/mcp.json` with the standard metadata and pointed it at a fictional endpoint. AFDocs did not change the score. I should have seen that coming. The check probes for real JSON-RPC behavior: initialize and listTools calls against an actual endpoint. A static manifest pointing at a fictional endpoint leaves the probe unanswered, because the probe wants the server to do something.
 
 ## Why 93 is the ceiling on GitHub Pages
 
 The remaining 7 points split between recoverable work and the static-host ceiling.
 
-The recoverable work is more of the same: tightening the content start position on a couple of pages, plus reducing the gap between rendered Markdown and source HTML on the one page that still has a parity warning, plus splitting `llms-full.txt` into per-section files so the whole corpus is visible to agents. Small adjustments like that. Pushing these would probably take the score into the mid-90s.
+The recoverable work is more of the same. It splits across tightening the content start position on a couple of pages, and reducing the gap between rendered Markdown and source HTML on the one page that still has a parity warning. Adding per-section files for `llms-full.txt` so the whole corpus is visible to agents is the third lever. Small adjustments like that. Pushing these would probably take the score into the mid-90s.
 
 The static-host ceiling is two checks that fail by design. Content Negotiation wants the server to respond with `text/markdown` when an agent sends `Accept: text/markdown`, which means swapping the content type header based on what the client asked for. GitHub Pages serves files with the content type they were uploaded as, and there is no hook to change that. The MCP Server check wants the same kind of dynamic behavior, a JSON-RPC endpoint that responds to the MCP protocol.
 
-The two practical ways out are a custom domain pointed at Cloudflare with a Worker that does Accept-header routing and exposes an MCP endpoint, or moving the deployment to Netlify or Cloudflare Pages where edge functions handle both. Either path is real infrastructure work, not a config change. I am leaving the score at 93 for now because the project is a portfolio site, and the right answer for a portfolio is to use the platform you are documenting, not to spin up a Worker so the docs site scores one point higher on a benchmark.
+The two practical ways out are a custom domain pointed at Cloudflare with a Worker that does Accept-header routing and exposes an MCP endpoint, or moving the deployment to Netlify or Cloudflare Pages where edge functions handle both. Either path is real infrastructure work. I am leaving the score at 93 for now because the project is a portfolio site, and a portfolio should use the platform it documents. Spinning up a Worker just to score one point higher on a benchmark would push against that principle.
 
 ## How to replicate this on a Fumadocs site
 
@@ -306,7 +306,7 @@ In `app/layout.tsx`, put the LLMS directive blockquote at the top of `<body>`, b
 </body>
 ```
 
-The check measures DOM position relative to the full HTML stream, not presence. Placing the directive as a direct child of `<body>` on day one saves a debugging session later when the check reports "warning" on a file that is sitting right there in the source.
+The check measures DOM position against the full HTML stream. Presence alone in the source file leaves the directive in the warning zone. Placing the directive as a direct child of `<body>` on day one saves a debugging session later when the check reports "warning" on a file that is sitting right there in the source.
 </Step>
 <Step>
 ### Split `llms-full.txt` by section when it crosses 50K
@@ -394,12 +394,12 @@ Mintlify is easier for this entire checklist. Most of the agent-readiness files 
 
 Fumadocs gives you the building blocks and trusts you to assemble the agent-readiness layer yourself. That is more work, but it also means you control the URL format and directive placement directly, with the sitemap shape as a third lever. For a portfolio or a docs site with specific structural needs, the extra control is worth it. For a typical product docs site where Mintlify's defaults are good enough, Mintlify is the easier path and the path I would recommend to most teams.
 
-The agent discovery files are where the easy points live, and they are an afternoon of work. `llms.txt` with one line per page, `llms-full.txt` dumped from the same source, plus `skill.md` describing the site's shape. The Markdown export route is the next hour. The sitemap is the hour after that. None of those changes risk anything, and together they should land a Fumadocs or Docusaurus site in the low 90s.
+The agent discovery files are where the easy points live, and they are an afternoon of work. `llms.txt` lists every page as a Markdown link, and `llms-full.txt` dumps the same source into one file. The third file, `skill.md`, describes the site's shape so an agent can decide whether to engage. After that, the Markdown export route and the sitemap fix are each safe to ship on their own. Together those changes should land a Fumadocs or Docusaurus site in the low 90s.
 
 One thing that catches people after the easy points: `llms-full.txt` grows with the corpus, and once it crosses 50K characters agents start truncating it. Split it by section before it crosses 100K. A 60-page portfolio was already at 741K in my case, which meant agents saw roughly the first 13%. Step 6 covers the split.
 
 The two checks worth ignoring are Content Negotiation and MCP Server, unless the project already has the infrastructure for them. A static manifest hack for MCP was tried and rejected by AFDocs. A static Accept-header router does not exist by definition. Both want a runtime in front of the site.
 
-The one trap I did not see coming was the LLMS directive. Place it as a direct child of `<body>` on day one and you will save yourself an afternoon of debugging why a check is at "warning" when the file is sitting right there in the source. The check measures DOM position relative to the full HTML stream, not presence.
+The one trap I did not see coming was the LLMS directive. Place it as a direct child of `<body>` on day one and you will save yourself an afternoon of debugging why a check is at "warning" when the file is sitting right there in the source. The check measures DOM position against the full HTML stream. Presence alone in the source file leaves the directive in the warning zone.
 
-The rest is just the kind of plumbing that anyone who has shipped docs before can pick up.
+The static-host ceiling is real, and the right answer for a portfolio is to leave it there. What I'd pay closer attention to is whether AFDocs adds more runtime-required checks before the protocol docs community adjusts.
