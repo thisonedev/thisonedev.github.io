@@ -8,7 +8,7 @@ import { Steps, Step } from 'fumadocs-ui/components/steps';
 
 I had four days to document Upkeep registration, a new Chainlink product that let a contract register itself for automated execution, complete with its own funding flow and a minimum balance rule that would silently stop the Upkeep from running if I got it wrong.
 
-None of it had shipped yet. I had to register a real Upkeep myself to confirm the steps actually worked, write up the whole process end to end, get it through review, and keep all of it out of sight until the date marketing had fixed for the announcement.
+None of it had shipped yet. To write the whole process end to end I had to register a real Upkeep myself and confirm the steps actually worked. After that, I just had to get the page through review and keep all of it out of sight until the date marketing had fixed for the announcement.
 
 I didn't start with a Notion page or a HackMD doc, though I know plenty of writers reach for one first. Four days doesn't leave room for a draft that has to be rebuilt into a real page later, so I went straight to a private fork of the docs repo: a second remote that only reviewers could reach, with its own preview so people could actually read the page instead of a raw markdown diff. Once it cleared review, I merged the branch into the public docs myself a few hours before marketing's announcement went out.
 
@@ -31,11 +31,11 @@ Before reaching for any tool, it helps to decide what "hidden" actually means fo
 
 1. The first is semi-private. You're fine with the content existing somewhere a determined person could find it: an old commit in a public repo, a page nothing links to. The point is just that casual visitors and search engines won't stumble onto it by accident. This is closer to tidiness than privacy, keeping a half-finished page out of the nav, or sharing a direct link with one beta tester without telling everyone else.
 
-2. The second is fully private. The page must not be reachable by anyone outside an approved list, full stop. This is what design-partner programs, fixed-date launches, and anything competitively sensitive actually require, even when teams don't always realize that's what they're asking for. A confirmed date with marketing already lined up is about as clear a signal as you'll get that you're in the second camp, not the first, and that was true for Upkeep from day one.
+2. The second is fully private. The page must not be reachable by anyone outside an approved list, full stop. This is what fixed-date launches and design-partner programs actually require, even when teams don't always realize that's what they're asking for. A confirmed date with marketing already lined up is about as clear a signal as you'll get that you're in the second camp. Upkeep was there from day one.
 
 Most documentation tooling defaults to making semi-private easy and fully private hard, so teams often end up with the wrong guarantee for what they're actually protecting. That mismatch is where most of the pain in this space comes from: the private repo that "doesn't scale," the unlisted page that turns up in Google anyway, the Notion link nobody can find six months later. Fully private is the harder problem, and it's the one that mattered to me, so that's where most of this post ends up living.
 
-One quick gut check before picking a method: who exactly has to be kept out, the general public or literally everyone but a handful of named partners, and how expensive a leak would be relative to how long the secret has to hold. Three days until a synchronized launch is a different problem than a six-month confidential project. Both answers are what actually decide which method fits, not how impressive the tooling sounds.
+One quick gut check before picking a method: who exactly has to be kept out, the general public or literally everyone but a handful of named partners, and how expensive a leak would be relative to how long the secret has to hold. Three days until a synchronized launch is a different problem than a six-month confidential project. Both answers decide which method fits. Tooling impressiveness has nothing to do with it.
 
 ## Approach #1: Semi-private
 
@@ -53,13 +53,13 @@ I've gotten in the habit of treating the link itself as a comment thread with ma
 
 This whole approach boils down to a flag somewhere in a page's metadata that tells the build process what to do with it. It's one file with one history, so there's no second copy of the content sitting anywhere else. It's the option most teams reach for first because it needs no second repo and no new infrastructure.
 
-Worth saying clearly upfront, because it matters a lot for an open source project specifically: this hides content from the rendered website, not from git history. If the docs repo is public, anyone willing to read commits can find the page regardless of what the build does with it.
+This hides content from the rendered site. Git history is untouched by it. If the docs repo is public, anyone willing to read commits can find the page regardless of what the build does with it.
 
-That's a fine tradeoff if the goal is keeping a half-finished page off the nav and out of search results, or if the source repo happens to be private even though the rendered site is open. However, it is not a substitute for real privacy in a fully public repo, which needs an actual access control, not a mere flag in the front matter.
+That's a fine tradeoff if the goal is keeping a half-finished page off the nav and out of search results, or if the source repo happens to be private even though the rendered site is open. For real privacy in a fully public repo, an actual access control does the work. A frontmatter flag is not enough.
 
 That said, you can play with frontmatter in a few ways:
 
-1. **Docusaurus** ships two frontmatter fields that solve different problems. `draft: true` pulls a page out of production builds entirely; it only shows up when running the local dev server. `unlisted: true` keeps the page in the production build and gives it a working URL, but drops it from the sidebar, the search index, and the sitemap. That's the one to reach for once a page is finished and the only goal is handing a beta tester a direct link before announcing it widely.
+1. **Docusaurus** ships two frontmatter fields that solve different problems. `draft: true` pulls a page out of production builds entirely; it only shows up when running the local dev server. `unlisted: true` keeps the page in the production build and gives it a working URL, but drops it from the sidebar and the search index. That's the one to reach for once a page is finished and the only goal is handing a beta tester a direct link before announcing it widely.
 
 ```md
 ---
@@ -89,7 +89,7 @@ hidden: true
 ---
 ```
 
-4. **Astro** has no draft system of its own. Teams running Starlight, the docs theme most Astro sites use, get a `draft: true` field that excludes the page from production builds, the same idea as Docusaurus's, though it only takes effect on a real production build, not the dev server.
+4. **Astro** has no draft system of its own. Teams running Starlight get a `draft: true` field that excludes the page from production builds, the same idea as Docusaurus's. The flag only takes effect on a real production build; the dev server ignores it.
 
 ```md
 ---
@@ -150,11 +150,11 @@ Everything above hides content from a render. This section is about content that
 
 A private repo with tightly restricted permissions is the one method here that gives a guarantee instead of an honor system. If someone doesn't have access to the repo, they cannot read the page, and there's no URL to guess or cached copy to worry about.
 
-nginx, the open source web server maintained by F5, runs a public version of [exactly this](https://github.com/nginx/documentation/blob/main/documentation/closed-contributions.md). Their public docs repo is where writing happens by default, and it syncs one way into a separate internal repo used only for content that can't be public yet. Two remotes on the same local checkout connect them: `origin` for the public repo, and a second remote pointing at the private one.
+nginx runs a public version of [exactly this](https://github.com/nginx/documentation/blob/main/documentation/closed-contributions.md). Their public docs repo is where writing happens by default, and it syncs one way into a separate internal repo used only for content that can't be public yet. Two remotes on the same local checkout connect them: `origin` for the public repo, and a second remote pointing at the private one.
 
 The setup has two distinct directions of sync, and mixing them up is the most common reason private-fork setups fall apart. Public content needs to flow into the private repo continuously, since writers there need current material to draft against. Finished pages travel the other way only once, when they are ready to ship. Someone wires up the first direction, forgets the second exists, and ends up resolving merge conflicts by hand months later. Both directions are worth scripting before you need them.
 
-The steps below cover the full setup: connecting the two repos, adding the automation, and running the daily writing loop from branching through promotion.
+The steps below cover the full setup: connecting the two repos and adding the automation that runs the daily writing loop from branching through promotion.
 
 <Steps>
 <Step>
@@ -337,7 +337,7 @@ git push staging staging/new-feature
 <Step>
 ### Open a pull request on staging
 
-Open a pull request against `staging/master` on the private repo. This is where reviewers leave comments, request changes, and sign off before the page ships. Because the private repo is only accessible to invited collaborators, the full review can happen there without any of the content being visible publicly.
+Open a pull request against `staging/master` on the private repo. This is where reviewers leave comments and request changes before the page ships. Because the private repo is only accessible to invited collaborators, the full review can happen there without any of the content being visible publicly.
 
 Once all reviewers have approved, close the pull request without merging. The page does not land on `staging/master` directly. Promotion to the public repo is what ships it.
 </Step>
@@ -405,23 +405,23 @@ People other than your own writers usually need to read the draft before launch:
 
 Deployment gating means standing up a complete second site straight from the private repo's branch and putting something real between it and casual visitors, while production keeps deploying publicly as normal. This is roughly what I built for Upkeep, a second deployment of the docs site pointed at the private branch that reviewers could actually click through instead of reading a raw diff.
 
-- Cloudflare Pages can do this for close to free. Every branch already gets its own preview URL, and Cloudflare Access can sit in front of just that one subdomain instead of production, free for up to 50 users, with proper login and nothing extra to host or run. It's not a setup I've seen on a web3 docs site, but it's worth knowing it exists.
+- Cloudflare Pages can do this for close to free. Every branch already gets its own preview URL, and Cloudflare Access can sit in front of just that one subdomain instead of production, free for up to 50 users, with proper login and nothing extra to host or run. I haven't seen this on a web3 docs site. Worth knowing it exists.
 
 - Netlify covers similar ground, though the path has shifted recently. Password protection used to be available on every account, letting you set a shared password or require visitors to log into your Netlify team. Now that feature lives on the Pro plan and above. On the free tier, Netlify's own docs include a template for a small Edge Function that checks a password against an environment variable, which works without a paid plan since Edge Functions are part of the free tier too.
 
-- If you'd rather not depend on a specific platform's feature, the generic version is just a password check sitting in front of whatever serves the files. With nginx, that's a single `.htpasswd` file. If real single sign-on matters more than a shared password, `oauth2-proxy` sits in front of the same server and checks against whatever identity provider the team already uses.
+- If you'd rather not depend on a specific platform's feature, the generic version is just a password check sitting in front of whatever serves the files. With nginx, that's a single `.htpasswd` file. When real single sign-on is the better fit than a shared password, `oauth2-proxy` sits in front of the same server and checks against whatever identity provider the team already uses.
 
 - Mintlify already builds a version of this straight into the platform. Switching on Partial Authentication in the dashboard puts every page behind a login by default, except whichever ones are explicitly marked `public: true` at the page or group level. A Pro plan gets a single shared password; Enterprise adds OAuth, JWT, and login restricted to people inside the same Mintlify organization. It's the same idea as a gated preview deployment, just with the gate built into the hosting instead of bolted on next to it.
 
-- ReadMe and GitBook have similar solution to Mintlify. The tradeoff is the same across all of them: a polished editor, a review workflow, and real access control with almost no engineering effort, in exchange for a subscription and some dependency on their format. If open tooling matters because of budget or a self-hosting requirement, pairing a private staging repo with automated sync and promotion with a gated preview deployment gets most of the same practical outcome, for the price of a GitHub Action and a free Cloudflare account.
+- ReadMe and GitBook cover the same ground as Mintlify. The tradeoff is the same across all of them: a polished editor and access control with real review workflows, with almost no engineering effort, in exchange for a subscription and some lock-in to their format. When budget or a self-hosting requirement drives the choice, pairing a private staging repo with automated sync and a gated preview deployment gets most of the same practical outcome, for the price of a GitHub Action and a free Cloudflare account.
 
 ### Per-request access control
 
-Fumadocs runs on Next.js, which can render a page per request instead of only at build time. In theory that means skipping a second deployment entirely: filtering the content source by a permission field, checking the visitor's identity when the page actually renders, and returning a real 404 instead of the page if they don't have access.
+Fumadocs runs on Next.js, which can render a page per request instead of only at build time. In theory that means skipping a second deployment entirely by filtering the content source on a permission field and returning a real 404 when the visitor doesn't have access.
 
 In practice, two things narrow how often that actually applies:
-1. The first is that it only works while running Next.js as a live server, on something like Vercel or a self-hosted Node process, rather than exporting the site as static HTML, the way most docs sites actually deploy, including this website. A static export has no request for anything to check against.
-2. The second matters more: the 404 only hides the rendered page, not the file behind it. That file still has to live somewhere, and if that somewhere is the same public docs repo as everything else, anyone who looks at the repository itself can read it no matter what the loader does at request time. The live site might return a clean 404, but the repository never does.
+1. The first is that it only works while running Next.js as a live server, since the request is what gets checked. Most docs sites, including this one, deploy as static HTML exports, so there's nothing to check against at all.
+2. The second is the bigger problem: the 404 only hides the rendered page. The file behind it stays in the repo. If that repo is the same public docs repo as everything else, anyone who looks at the repository itself can read it no matter what the loader does at request time. The live site might return a clean 404, but the repository never does.
 
 <Callout type="warn">
 This is the same problem the frontmatter trick had earlier in this post. A 404 at request time doesn't help if the markdown file is still sitting in a public git history.
@@ -437,7 +437,7 @@ The per-request version only earns its keep if the content source is also kept s
 | Disposable drafts (Notion, HackMD, Google Docs) | High until promoted | Low | Free to cheap | Early review only, never the final destination |
 | Private staging repo, synced and promoted automatically | High | Medium | Free | Full privacy needs, regular shipping cadence |
 | Gated preview deployment (Cloudflare Access, Netlify, reverse proxy) | High | Medium | Free to low | Non-engineers need a real, browsable preview |
-| Per-request access control (Fumadocs) | High, only if content also lives outside the public repo | Medium, plus a live server | Free | Teams already running Next.js as a live app, not a static export |
+| Per-request access control (Fumadocs) | High, only if content also lives outside the public repo | Medium, plus a live server | Free | Teams already running Next.js as a live server (not static export) |
 | Managed platform auth (Mintlify, ReadMe, GitBook) | Medium to high, by plan tier | Very low | Paid for real auth | Little appetite for building this yourself |
 
 No method wins outright, since the two questions from the start of this post have different answers for different teams. For Upkeep specifically, the whole stack was simpler than the automated version described above: a private fork with a real preview for reviewers, merged by hand into the public repo a few hours before marketing's announcement.
