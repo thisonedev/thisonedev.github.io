@@ -11,7 +11,7 @@ The problem with most OpenAPI generators is that they assume you're building a t
 
 ![02](../images/blog-02.png)
 
-I ran into this while building a portfolio site with Fumadocs. Instead of spreading endpoints across dozens of pages, I wanted a single reference page that displayed the entire specification in one place. The layout I was after had documentation on the left, code samples and an interactive playground on the right, and every endpoint available without navigating between routes.
+I ran into this while building a portfolio site with Fumadocs. Instead of spreading endpoints across dozens of pages, I wanted a single reference page that displayed the entire specification in one place. The layout I was after had documentation on the left and code samples with an interactive playground on the right, with every endpoint reachable without navigating between routes.
 
 Fumadocs doesn't provide this out of the box. Its default OpenAPI integration is similar to the rest of the industry, but it wasn't the experience I was after. So I decided to build it myself.
 
@@ -61,7 +61,7 @@ export function getSpecTitle(slug: string): string | undefined {
 }
 ```
 
-Because `generateStaticParams()`, the route handler, and the sidebar tree all read from the same `SPECS` object, adding a seventh spec is now one line — a new entry in the object. The helpers keep callers type-safe without dragging the full record around. The harder part was never the config. It was getting the route to render the right thing once that URL existed.
+Because the route handler and the sidebar tree both read from the same `SPECS` object, adding a seventh spec is now one line: a new entry in the object. The helpers keep callers type-safe without dragging the full record around. The harder part was never the config. It was getting the route to render the right thing once that URL existed.
 
 ## What I tried before reading the schema directly
 
@@ -78,13 +78,13 @@ const methodKeys = ['get', 'put', 'post', 'delete', 'options', 'head', 'patch', 
 ...
 ``` 
 
-Webhooks get the same treatment from `dereferenced.webhooks`. The resulting arrays go straight into `APIPage` alongside `document`, `showTitle`, and `showDescription`, and the group page renders every operation in the spec on one route. The shape `<APIPage>` wants is the public `OperationItem` and `WebhookItem` types from `fumadocs-openapi/ui` — `{ path, method }` for operations and `{ name, method }` for webhooks. That's all the component needs to look up the operation in the dereferenced schema it already loaded for `document`.
+Webhooks get the same treatment from `dereferenced.webhooks`. The resulting arrays go straight into `APIPage` alongside `document` and `showTitle`, and the group page renders every operation in the spec on one route. The shape `<APIPage>` wants is the public `OperationItem` and `WebhookItem` types from `fumadocs-openapi/ui`: `{ path, method }` for operations and `{ name, method }` for webhooks. That's all the component needs to look up the operation in the dereferenced schema it already loaded for `document`.
 
 I kept the default per-operation pages working too, since deep links to a single endpoint are still useful elsewhere on the site. Those still come from `source.getPage(slug)` and `openapiData.getAPIPageProps()`, completely unchanged. Both routing paths live in the same `page.tsx`, one manual branch for spec group pages and one untouched branch for everything Fumadocs already generates.
 
 ## That one CSS import
 
-The group page rendered with every operation in place, but the UI was renderring incorrectly. Everything sat in a single column instead of the two-column docs-left, code-right layout I'd been building toward, and nothing in the props or the component looked off. It wasn't a long search, maybe fifteen minutes, but it was the kind of fifteen minutes that feels longer because nothing about the symptom points at the cause.
+The group page rendered with every operation in place, but the UI was rendering incorrectly. Everything sat in a single column instead of the two-column docs-left, code-right layout I'd been building toward, and nothing in the props or the component looked off. It wasn't a long search, maybe fifteen minutes, but it was the kind of fifteen minutes that feels longer because nothing about the symptom points at the cause.
 
 <Callout type="warn">
 `fumadocs-openapi` ships its own CSS preset, separate from the core Fumadocs UI preset. Importing the UI preset alone gets you working components in the wrong format, with no runtime warning that a stylesheet is missing.
@@ -176,7 +176,7 @@ export const APIPage = createAPIPage(openapi, {});
 <Step>
 ### Build the group route from the dereferenced schema
 
-In your catch-all page, dispatch the group route to a `renderSpecGroup()` helper before falling through to the default Fumadocs page lookup. The helper reads the schema with `getSchema()`, walks every HTTP method on every path, and passes the resulting `OperationItem` list straight into `APIPage`. Note that `OperationItem` is just `{ path, method }` — `<APIPage>` already has the dereferenced schema via `document`, so it doesn't need anything else.
+In your catch-all page, dispatch the group route to a `renderSpecGroup()` helper before falling through to the default Fumadocs page lookup. The helper reads the schema with `getSchema()`, walks every HTTP method on every path, and passes the resulting `OperationItem` list straight into `APIPage`. Note that `OperationItem` is just `{ path, method }`. `<APIPage>` already has the dereferenced schema via `document`, so it doesn't need anything else.
 
 ```tsx
 // app/[[...slug]]/page.tsx
