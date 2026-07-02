@@ -1,27 +1,26 @@
 ---
 title: Migrating Gitbook API into Mintlify OpenAPI
-description: "Migrating API docs from GitBook to Mintlify OpenAPI: the problems you will hit with GitBook syntax, single-URL APIs, and Mintlify's YAML strictness"
 date: 2026-06-23
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
 import { Steps, Step } from 'fumadocs-ui/components/steps';
 
-As a technical writer working in web3, I recently run into a specific situation: a project I've been working with had their API reference on GitBook. The docs were functional, but GitBook wasn't pulling its weight for an API-heavy reference: no native OpenAPI rendering, no try-it playground, a sidebar you have to build by hand.
+A few weeks ago I migrated a GitBook API reference to Mintlify. The GitBook version was functional, but it ran into its limits on an API-heavy page: no native OpenAPI rendering, no try-it playground, and a sidebar that has to be hand-built every time an endpoint ships. Mintlify was the test target because it generates all three from a valid OpenAPI schema, with no extra setup.
 
-Mintlify had been on my list to test for a while, and this felt like the right moment. It renders OpenAPI natively, generates a clean sidebar grouped by tags, and includes a try-it playground without any extra setup. I used Hyperliquid's perpetuals API as my test case since it's a reference I know well and it's representative of the kind of multi-endpoint, single-URL APIs common in the space.
+I picked Hyperliquid's perpetuals API as the conversion source. It's a well-known reference and it's the kind of single-URL, multi-endpoint API common in the space. All 30 perpetuals info operations post to `POST /info` and use a `type` field in the body to distinguish between them. That single URL is the first quirk the GitBook source hides.
 
-I'm also a regular user of AI tools for this kind of work. The entire conversion here was done through Claude. After several trial and errors, I figured out the right instructions to get consistent output. That took more iteration than expected because GitBook, OpenAPI, and Mintlify each introduce their own specific constraints. This post is about those constraints and how to address them in your prompt.
+The entire conversion for this paritcular challenge was done through Claude. Getting consistent output took more iteration than I expected because the GitBook source format and the OpenAPI spec don't map cleanly to each other, and Mintlify's parser is strict in ways the spec doesn't warn you about. This post is about those constraints and how to spell them out in your prompt so the first conversion comes out right.
 
 ![04](../images/blog-04.png)
-**Before*
+**Before**
 
 ![05](../images/blog-05.png)
-**After*
+**After**
 
 ## Why Mintlify renders OpenAPI differently
 
-GitBook treats API documentation as just another markdown page. You write it, you format it, you ship it. There's no schema validation, no structured sidebar, and no automatic generation of anything. The result looks fine but requires a lot of manual maintenance as endpoints change.
+GitBook treats API documentation as just another markdown page. You write it, you format it, you ship it. There's no schema validation, no structured sidebar. The result looks fine but requires a lot of manual maintenance as endpoints change.
 
 Mintlify takes a different approach. You give it a valid OpenAPI 3.1.0 schema and it generates the reference automatically: sidebar navigation grouped by tags, request and response schema explorers, and an interactive playground on every endpoint. The tradeoff is that it's strict. A malformed schema or an incorrect YAML value doesn't produce a warning. It either silently drops the page from the sidebar or renders nothing at all.
 
@@ -29,9 +28,9 @@ That strictness is what caused most of the problems below.
 
 ## Problem 1: OpenAPI doesn't support multiple operations on the same URL
 
-Hyperliquid's info endpoint is a single URL with a single HTTP method. All 16 perpetuals operations post to `https://api.hyperliquid.xyz/info` and use a `type` field in the request body to distinguish between them: `"meta"`, `"clearinghouseState"`, `"fundingHistory"`, and so on.
+Hyperliquid's info endpoint is a single URL with a single HTTP method. All 30 perpetuals info operations post to `https://api.hyperliquid.xyz/info` and use a `type` field in the request body to distinguish between them: `"meta"`, `"clearinghouseState"`, `"fundingHistory"`, and so on.
 
-OpenAPI expects paths to be unique combinations of URL and HTTP method. `POST /info` is one slot. Trying to describe 16 operations under that one key produces an invalid schema.
+OpenAPI expects paths to be unique combinations of URL and HTTP method. `POST /info` is one slot. Trying to describe 30 operations under that one key produces an invalid schema.
 
 **The fix:** path fragments. The OpenAPI spec allows fragments in path keys, and they are ignored at runtime. So `/info#meta` and `/info#clearinghouseState` are distinct keys in the `paths` object even though both hit the same endpoint.
 
@@ -72,7 +71,7 @@ Several endpoints return two different response shapes depending on which dex yo
 
 The correct structure in OpenAPI is named `examples` (plural) under the response content, which is what triggers Mintlify to render a tab picker:
 
-**Singular — drops the second shape:**
+**Singular form** (drops the second shape):
 
 ```yaml
 responses:
@@ -84,7 +83,7 @@ responses:
           markPx: "14.3161"
 ```
 
-**Named examples — renders a tab picker:**
+**Named examples** (renders a tab picker):
 
 ```yaml
 responses:
@@ -220,7 +219,7 @@ targeting Mintlify documentation platform.
 
 ---
 
-## Structure
+Structure
 
 - One file, `openapi: 3.1.0`, with `info`, `servers`, `tags`, `paths`,
   `components/schemas`.
@@ -233,7 +232,7 @@ targeting Mintlify documentation platform.
   Use `oneOf`/`allOf` for discriminated variants.
 - Path order must match the Markdown heading order exactly.
 
-## Fidelity
+Fidelity
 
 - Copy every `summary` verbatim.
 - Keep `description` fields as prose.
@@ -244,7 +243,7 @@ targeting Mintlify documentation platform.
 - Include at least one `example` on each request body; use named `examples` on
   responses where the docs show multiple tabs.
 
-## Mintlify YAML
+Mintlify YAML
 
 - Quote **all** string values inside `example:` and `value:` blocks. Numbers,
   booleans, and `null` stay bare. Everything else gets `"..."`. No exceptions.
@@ -254,7 +253,7 @@ targeting Mintlify documentation platform.
 - Schema `description` with colons or quotes → single-quote the whole value:
   `description: '"A" = ask/sell'`.
 
-## Generation
+Generation
 
 Write and run a Python script using PyYAML with a custom `SafeDumper` that
 double-quotes all `str` values. Dump with `default_flow_style=False,
@@ -266,8 +265,14 @@ sort_keys=False`. Then validate:
    `null`, or quoted string.
 ```
 
-## What I'd tell someone starting this tomorrow
+## Final words
 
 The path fragment pattern for single-URL APIs is the first thing to get right. Without it, Mintlify gives you an empty sidebar rather than an error. After that, get the quoting enforced programmatically before previewing anything. Mintlify's rendering failures for malformed examples are almost never explicit, and tracking down which operation caused a missing page is tedious.
 
-The overall approach works well as an AI-assisted task. The model handles the structural translation reliably once the edge cases are spelled out. What it doesn't do on its own is catch Mintlify-specific rendering quirks, which is what most of the prompt instructions above are actually for.
+The overall approach works well as an AI-assisted task. The model handles the structural translation reliably once the edge cases are spelled out. What it doesn't catch on its own is Mintlify-specific rendering quirks, and most of the prompt above is exactly that.
+
+After this first run I reused the prompt on two more single-URL APIs (one perpetuals, one spot), both with the same quoting script. Each one rendered cleanly in Mintlify's preview on the first try.
+
+That said, the quoting script is the part that ages the worst: Mintlify may fix its parser, and when it does, half these fixes will become unnecessary. The path-fragment trick and the `oneOf` modeling will stay. 
+
+If a quirk not covered here breaks your migration, the prompt probably needs another rule, and I'd rather add it to the prompt than have you patch around it.
